@@ -91,7 +91,6 @@
 		<Unit filename="inc\stm32f0xx.h" />
 		<Unit filename="inc\stm32f0xx_conf.h" />
 		<Unit filename="inc\system_stm32f0xx.h" />
-		<Unit filename="readme.txt" />
 		<Unit filename="SPL\inc\stm32f0xx_adc.h" />
 		<Unit filename="SPL\inc\stm32f0xx_can.h" />
 		<Unit filename="SPL\inc\stm32f0xx_cec.h" />
@@ -194,7 +193,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="stm32f042f6_flash.ld" />
-		<Unit filename="stm32f042f6_sram.ld" />
 		<Extensions>
 			<code_completion />
 			<debugger>
