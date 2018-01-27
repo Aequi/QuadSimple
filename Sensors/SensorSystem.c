@@ -1,4 +1,5 @@
 #include "SensorSystem.h"
+#if 0
 #include "SpiHal.h"
 #include "stm32f4xx_conf.h"
 
@@ -386,3 +387,5 @@ void clearFlash(void) {
     FLASH_EraseSector(SECTOR_NUM, VoltageRange_3);
     FLASH_Lock();
 }
+
+#endif

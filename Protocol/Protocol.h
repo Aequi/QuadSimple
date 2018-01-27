@@ -5,22 +5,18 @@
 #include <stdbool.h>
 
 #pragma pack(push, 1)
-typedef struct JoyValuesStatePacket {
-
-    uint16_t joyUpLeftXaxisStr;
-    uint16_t joyUpLeftYaxisB0;
-    uint16_t joyDnLeftXaxis;
-    uint16_t joyDnLeftYaxisB1;
-    uint16_t joyDnRightXaxisB2;
-    uint16_t joyDnRightYaxis;
-    uint16_t joyUpRightXaxisB3;
-    uint16_t joyUpRightYaxisStp;
-    uint16_t joyStopSequence;
-} JoyValuesStatePacket;
+typedef struct ProtocolJoystickPacket {
+    uint16_t joyLeftX;
+    uint16_t joyLeftY;
+    uint16_t joyRightX;
+    uint16_t joyRightY;
+    uint8_t buttonCode;
+} ProtocolJoystickPacket;
 #pragma pack(pop)
 
-void protocolProcessBuffer(void);
-JoyValuesStatePacket *protocolGetJoystickValues(void);
+void protocolProcess(void);
+ProtocolJoystickPacket protocolGetJoystickValues(void);
 bool protocolIsPacketReady(void);
+void protocolSendBatterySoc(uint8_t soc);
 
 #endif

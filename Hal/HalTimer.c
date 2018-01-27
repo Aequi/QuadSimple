@@ -1,5 +1,5 @@
-#include "Timer.h"
-#include "stm32f0xx.h"
+#include "HalTimer.h"
+#include "stm32f0xx_conf.h"
 
 #include <stddef.h>
 
@@ -15,7 +15,7 @@ void TIM2_IRQHandler(void)
     }
 }
 
-void timerInit(TimerCallback timerCb)
+void halTimerInit(TimerCallback timerCb)
 {
     timerCallback = timerCb;
 
