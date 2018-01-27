@@ -83,14 +83,67 @@
 			<Add option="-eb_start_files" />
 			<Add option="-eb_lib=n" />
 		</Linker>
+		<Unit filename="App\main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="App\startup_stm32f0xx.S">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="App\stm32f0xx.h" />
+		<Unit filename="App\stm32f0xx_conf.h" />
+		<Unit filename="App\system_stm32f0xx.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="App\system_stm32f0xx.h" />
 		<Unit filename="cmsis\arm_common_tables.h" />
 		<Unit filename="cmsis\arm_math.h" />
 		<Unit filename="cmsis\core_cm0.h" />
 		<Unit filename="cmsis\core_cmFunc.h" />
 		<Unit filename="cmsis\core_cmInstr.h" />
-		<Unit filename="inc\stm32f0xx.h" />
-		<Unit filename="inc\stm32f0xx_conf.h" />
-		<Unit filename="inc\system_stm32f0xx.h" />
+		<Unit filename="Filters\Lpf\Lpf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Filters\Lpf\Lpf.h" />
+		<Unit filename="FlightController\FlightController.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="FlightController\FlightController.h" />
+		<Unit filename="Hal\HalAdc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Hal\HalAdc.h" />
+		<Unit filename="Hal\HalCommon.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Hal\HalCommon.h" />
+		<Unit filename="Hal\HalGpio.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Hal\HalGpio.h" />
+		<Unit filename="Hal\HalI2c.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Hal\HalI2c.h" />
+		<Unit filename="Hal\HalUart.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Hal\HalUart.h" />
+		<Unit filename="Hal\Timer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Hal\Timer.h" />
+		<Unit filename="PidController\PidController.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="PidController\PidController.h" />
+		<Unit filename="Protocol\Protocol.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Protocol\Protocol.h" />
+		<Unit filename="Sensors\SensorSystem.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Sensors\SensorSystem.h" />
 		<Unit filename="SPL\inc\stm32f0xx_adc.h" />
 		<Unit filename="SPL\inc\stm32f0xx_can.h" />
 		<Unit filename="SPL\inc\stm32f0xx_cec.h" />
@@ -181,15 +234,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="SPL\src\stm32f0xx_wwdg.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src\main.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src\startup_stm32f0xx.S">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src\system_stm32f0xx.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="stm32f042f6_flash.ld" />
