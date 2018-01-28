@@ -14,6 +14,7 @@ typedef struct ProtocolJoystickPacket {
 } ProtocolJoystickPacket;
 #pragma pack(pop)
 
+void protocolInit(bool isParameterSetNeeded);
 void protocolProcess(void);
 ProtocolJoystickPacket protocolGetJoystickValues(void);
 bool protocolIsPacketReady(void);

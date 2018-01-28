@@ -5,18 +5,21 @@
 
 #define M_PI_F  3.1415926535897932384626433832795f
 static PidControllerF pidControllerPitch, pidControllerRoll, pidControllerYaw;
+static float pitchPidOut, rollPidOut, yawPidOut;
+static float currentPitch, currentRoll, currentYaw;
+static float controllResolution;
 
-void flightControllerInit(uint32_t updateRate)
+void flightControllerInit(uint32_t updateRate, uint32_t controlResolution)
 {
-    pidControllerInitializeF(&pidControllerPitch, 7.5f, 6.2f, 1.4f, 1024.0f, -1024.0f,
+    float res = controlResolution;
+    controllResolution = res;
+    pidControllerInitializeF(&pidControllerPitch, 7.5f, 6.2f, 1.4f, res, -res,
                              20.0f, -20.0f, 0.0f, false, 1.0f / (float) updateRate);
-    pidControllerInitializeF(&pidControllerRoll, 7.5f, 6.2f, 1.4f, 1024.0f, -1024.0f,
+    pidControllerInitializeF(&pidControllerRoll, 7.5f, 6.2f, 1.4f, res, -res,
                              20.0f, -20.0f, 0.0f, false, 1.0f / (float) updateRate);
-    pidControllerInitializeF(&pidControllerYaw, 4.0f, 1.0f, 0.5f, 1024.0f, -1024.0f,
+    pidControllerInitializeF(&pidControllerYaw, 4.0f, 1.0f, 0.5f, res, -res,
                              36.0f, -36.0f, 0.0f, false, 1.0f / (float) updateRate);
 }
-
-static float currentPitch, currentRoll, currentYaw;
 
 static void eulerFromQuaternion(Quaternion *quaternion)
 {
@@ -37,13 +40,11 @@ static void eulerFromQuaternion(Quaternion *quaternion)
   currentRoll = atan2f(gy, gz) * 180.0f / M_PI_F;
 }
 
-
-static float pitchPidOut, rollPidOut, yawPidOut;
 void flightControllerUpdate(FlightControllerSetPoint *setPoint,
                             FlightControllerOrientationEstimate *orientationEstimate,
                             FlightControllerMotorOutput *motorOutput)
 {
-    #define CLAMP_POWER(x) (((x) < 0.0) ? 0.0 : (((x) > 1023.0) ? 1023.0 : (x)))
+    #define CLAMP_POWER(x) (((x) < 0.0) ? 0.0 : (((x) > controllResolution) ? controllResolution : (x)))
 
     eulerFromQuaternion(&orientationEstimate->orientation);
     if (setPoint->throttle <= 1.0f) {
@@ -52,25 +53,25 @@ void flightControllerUpdate(FlightControllerSetPoint *setPoint,
         motorOutput->motorBackRight = 0;
         motorOutput->motorFrontRight = 0;
     } else {
-
         pitchPidOut = pidControllerUpdateF(&pidControllerPitch, currentPitch - setPoint->pitch);
         rollPidOut = pidControllerUpdateF(&pidControllerRoll, currentRoll - setPoint->roll);
+
         float yawError;
         if ((currentYaw * setPoint->yaw < 0.0f) && (fabsf(currentYaw - setPoint->yaw) > 180.0f)) {
-            if (setPoint->yaw < 0.0f)
+            if (setPoint->yaw < 0.0f) {
                 yawError = currentYaw - setPoint->yaw - 360.0f;
-            else
+            } else {
                 yawError = currentYaw - setPoint->yaw + 360.0f;
+            }
         } else {
             yawError = currentYaw - setPoint->yaw;
         }
         yawPidOut = pidControllerUpdateF(&pidControllerYaw, yawError);
 
-
-        motorOutput->motorFrontLeft = CLAMP_POWER(setPoint->throttle * 10.0f - rollPidOut - yawPidOut);
-        motorOutput->motorBackLeft = CLAMP_POWER(setPoint->throttle * 10.0f + pitchPidOut + yawPidOut);
-        motorOutput->motorBackRight = CLAMP_POWER(setPoint->throttle * 10.0f + rollPidOut - yawPidOut);
-        motorOutput->motorFrontRight = CLAMP_POWER(setPoint->throttle * 10.0f - pitchPidOut + yawPidOut);
+        motorOutput->motorFrontLeft = CLAMP_POWER(setPoint->throttle - rollPidOut - yawPidOut);
+        motorOutput->motorBackLeft = CLAMP_POWER(setPoint->throttle + pitchPidOut + yawPidOut);
+        motorOutput->motorBackRight = CLAMP_POWER(setPoint->throttle + rollPidOut - yawPidOut);
+        motorOutput->motorFrontRight = CLAMP_POWER(setPoint->throttle - pitchPidOut + yawPidOut);
     }
 }
 

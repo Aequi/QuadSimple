@@ -388,4 +388,80 @@ void clearFlash(void) {
     FLASH_Lock();
 }
 
+static void flightControllerStart()
+{
+    #define OF_FILTER_COEF_ALPHA  0.0002f
+    #define OF_FILTER_COEF_BETA   0.0002f
+
+    #define OF_FILTER_COEF_GAMMA  0.00000002f
+    #define OF_FILTER_COEF_THETA  0.0002f
+    orientationFilterInitialize(&orientationFilterCtx, 1.0f / (float) SENSOR_SYSTEM_UPDATE_RATE, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_GAMMA, OF_FILTER_COEF_THETA);
+    flightControllerInit(SENSOR_SYSTEM_UPDATE_RATE);
+
+    spiHalImuReadOutStart();
+}
+
+float magnetometerBias[3], magnetometerSensitivity[3];
+
+static OrientationFilterCtx orientationFilterCtx;
+static OfVector3 accMeasurements, gyroMeasurements, magMeasurements;
+static FlightControllerMotorOutput motorOutput;
+static FlightControllerSetPoint setPoint;
+static FlightControllerOrientationEstimate orientationEstimate;
+const float magResolution = 4912.0f / 32760.0f;
+static int16_t imuData[9];
+static volatile bool isImuFrameReady = false;
+static void onImuFrameReady(void)
+{
+    extern float fMagCalibrationX;
+    extern float fMagCalibrationY;
+    extern float fMagCalibrationZ;
+
+    #define M_PI_F  3.1415926535897932384626433832795f
+    uint8_t *data = spiHalImuGetBuffer();
+
+    uint8_t *temp = (uint8_t *) imuData;
+
+    temp[0] = data[1]; temp[1] = data[0];
+    temp[2] = data[3]; temp[3] = data[2];
+    temp[4] = data[5]; temp[5] = data[4];
+
+    temp[6] = data[9]; temp[7] = data[8];
+    temp[8] = data[11]; temp[9] = data[10];
+    temp[10] = data[13]; temp[11] = data[12];
+
+    temp[12] = data[14]; temp[13] = data[15];
+    temp[14] = data[16]; temp[15] = data[17];
+    temp[16] = data[18]; temp[17] = data[19];
+
+    accMeasurements.x = (float) imuData[0] * 8.0f / 32767.0f;
+    accMeasurements.y = (float) imuData[1] * 8.0f / 32767.0f;
+    accMeasurements.z = (float) imuData[2] * 8.0f / 32767.0f;
+    gyroMeasurements.x = (float) imuData[3] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
+    gyroMeasurements.y = (float) imuData[4] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
+    gyroMeasurements.z = (float) imuData[5] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
+
+    magMeasurements.x = (float) imuData[7] * fMagCalibrationY * magResolution - magnetometerBias[1];
+    magMeasurements.y = (float) imuData[6] * fMagCalibrationX * magResolution - magnetometerBias[0];
+    magMeasurements.z = ((float) imuData[8] * fMagCalibrationZ * magResolution - magnetometerBias[2]);
+
+    magMeasurements.y *= magnetometerSensitivity[1];
+    magMeasurements.x *= magnetometerSensitivity[0];
+    magMeasurements.z *= magnetometerSensitivity[2];
+
+    orientationFilterUpdateImu(&orientationFilterCtx, &accMeasurements, &gyroMeasurements, false);
+    //orientationFilterUpdate(&orientationFilterCtx, &accMeasurements, &gyroMeasurements, &magMeasurements, false);
+    getSetPoint(&setPoint);
+    orientationEstimate.orientation.w = orientationFilterCtx.filterEstimate.w;
+    orientationEstimate.orientation.x = orientationFilterCtx.filterEstimate.x;
+    orientationEstimate.orientation.y = orientationFilterCtx.filterEstimate.y;
+    orientationEstimate.orientation.z = orientationFilterCtx.filterEstimate.z;
+    flightControllerUpdate(&setPoint, &orientationEstimate, &motorOutput);
+    timersHalSetPwmFastChannel0(motorOutput.motorFrontLeft);
+    timersHalSetPwmFastChannel1(motorOutput.motorBackLeft);
+    timersHalSetPwmFastChannel2(motorOutput.motorBackRight);
+    timersHalSetPwmFastChannel3(motorOutput.motorFrontRight);
+    isImuFrameReady = true;
+}
+
 #endif

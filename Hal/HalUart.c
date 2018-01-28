@@ -38,9 +38,9 @@ void uartRfInit(uint32_t baudRate)
                                             .USART_Mode = USART_Mode_Rx | USART_Mode_Tx,
                                             .USART_HardwareFlowControl = USART_HardwareFlowControl_None};
 
-    USART_Init(USART1, &usartInitStructure);
-    USART_Cmd(USART1, ENABLE);
-    USART_DMACmd(USART1, USART_DMAReq_Rx | USART_DMAReq_Tx, ENABLE);
+    USART_Init(USART2, &usartInitStructure);
+    USART_Cmd(USART2, ENABLE);
+    USART_DMACmd(USART2, USART_DMAReq_Rx | USART_DMAReq_Tx, ENABLE);
 
     DMA_InitTypeDef dmaInitStructure;
 
@@ -51,13 +51,13 @@ void uartRfInit(uint32_t baudRate)
     dmaInitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
     dmaInitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     dmaInitStructure.DMA_Mode = DMA_Mode_Circular;
-    dmaInitStructure.DMA_PeripheralBaseAddr = (uint32_t) &USART1->RDR;
+    dmaInitStructure.DMA_PeripheralBaseAddr = (uint32_t) &USART2->RDR;
     dmaInitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
     dmaInitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     dmaInitStructure.DMA_Priority = DMA_Priority_Medium;
-    DMA_Init(DMA1_Channel3, &dmaInitStructure);
-    DMA_ITConfig(DMA1_Channel3, DMA_IT_TC, ENABLE);
-    DMA_ITConfig(DMA1_Channel3, DMA_IT_HT, ENABLE);
+    DMA_Init(DMA1_Channel5, &dmaInitStructure);
+    DMA_ITConfig(DMA1_Channel5, DMA_IT_TC, ENABLE);
+    DMA_ITConfig(DMA1_Channel5, DMA_IT_HT, ENABLE);
 }
 
 static void uartRfDmaTxCompleteHandler(bool isHalf)
@@ -89,7 +89,7 @@ void uartRfDmaTx(uint8_t *dataBuffer, uint32_t bufferSize, void (*txCompleteCb)(
     dmaInitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
     dmaInitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     dmaInitStructure.DMA_Mode = DMA_Mode_Normal;
-    dmaInitStructure.DMA_PeripheralBaseAddr = (uint32_t) &USART1->TDR;
+    dmaInitStructure.DMA_PeripheralBaseAddr = (uint32_t) &USART2->TDR;
     dmaInitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
     dmaInitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     dmaInitStructure.DMA_Priority = DMA_Priority_Medium;
@@ -101,10 +101,10 @@ void uartRfDmaTx(uint8_t *dataBuffer, uint32_t bufferSize, void (*txCompleteCb)(
 
 uint32_t uartRfGetCurrentRxBuffIdx()
 {
-    return UART_CMD_BUFF_SIZE - DMA1_Channel3->CNDTR;
+    return UART_CMD_BUFF_SIZE - DMA1_Channel5->CNDTR;
 }
 
 void uartRfDmaStartStopRx(bool isStart)
 {
-    DMA_Cmd(DMA1_Channel3, isStart ? ENABLE : DISABLE);
+    DMA_Cmd(DMA1_Channel5, isStart ? ENABLE : DISABLE);
 }

@@ -42,12 +42,7 @@ void halAdcInit(HalAdcDataReady halAdcDataReadyCb)
     adcInitStructure.ADC_ScanDirection = ADC_ScanDirection_Upward;
     ADC_Init(ADC1, &adcInitStructure);
     ADC_DMACmd(ADC1, ENABLE);
-    ADC_ChannelConfig(ADC1, ADC_Channel_0, ADC_SampleTime_239_5Cycles);
-    ADC_ChannelConfig(ADC1, ADC_Channel_4, ADC_SampleTime_239_5Cycles);
     ADC_ChannelConfig(ADC1, ADC_Channel_5, ADC_SampleTime_239_5Cycles);
-    ADC_ChannelConfig(ADC1, ADC_Channel_6, ADC_SampleTime_239_5Cycles);
-    ADC_ChannelConfig(ADC1, ADC_Channel_7, ADC_SampleTime_239_5Cycles);
-    ADC_ChannelConfig(ADC1, ADC_Channel_9, ADC_SampleTime_239_5Cycles);
     ADC_ContinuousModeCmd(ADC1, ENABLE);
     ADC_DMARequestModeConfig(ADC1, ADC_DMAMode_Circular);
     ADC_Cmd(ADC1, ENABLE);

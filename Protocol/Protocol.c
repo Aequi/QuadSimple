@@ -40,9 +40,35 @@ uint8_t crc7(uint8_t buffer[], uint32_t length)
     return crc7;
 }
 
+void protocolUnpack(const uint8_t data[9])
+{
+    joysticksStatePacket.joyLeftX;
+}
+
 static void protocolProcessByte(uint8_t dataByte)
 {
+    static uint8_t packet[9];
+    static bool isStartFound = false;
+    static uint32_t byteCounter = 0;
 
+    if (dataByte & START_BIT) {
+        byteCounter = 0;
+        isStartFound = true;
+        packet[byteCounter++] = dataByte;
+    } else if (isStartFound) {
+        packet[byteCounter++] = dataByte;
+        if (byteCounter < 9) {
+            return;
+        }
+
+        if (crc7(packet, sizeof(packet)) == 0) {
+            protocolUnpack(packet);
+            isRfRxReady = true;
+        } else {
+            byteCounter = 0;
+            isStartFound = false;
+        }
+    }
 }
 
 void protocolInit(bool isParameterSetNeeded)
@@ -52,8 +78,8 @@ void protocolInit(bool isParameterSetNeeded)
     if (isParameterSetNeeded) {
         halGpioEnableRfAt(true);
 
-        delayMs(20);
-        uartRfInit(9600);
+        delayMs(200);
+        uartRfInit(115200);
         uartRfDmaStartStopRx(true);
 
         // Set configuration
@@ -90,6 +116,7 @@ void protocolProcess(void)
 
 ProtocolJoystickPacket protocolGetJoystickValues(void)
 {
+    isRfRxReady = false;
     return joysticksStatePacket;
 }
 
@@ -106,5 +133,4 @@ void protocolSendBatterySoc(uint8_t soc)
         isRfTxReady = false;
         uartRfDmaTx(&batteryCharge, sizeof(batteryCharge), rfTxReady);
     }
-
 }

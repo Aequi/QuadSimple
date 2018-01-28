@@ -86,35 +86,6 @@ static void i2cWrite(uint8_t chipAddress, uint8_t registerAddress, uint8_t data)
     I2C_ClearFlag(I2C_PERIPH_HWUNIT, I2C_FLAG_STOPF);
 }
 
-static void sendCommand(uint8_t c)
-{
-    uint8_t controlData[] = {0x00, c};
-    i2cWrite(I2C_PERIPH_IMU_ADDRESS, controlData[0], controlData[1]);
-}
-
-void halI2cLcdRefresh(void)
-{
-    uint32_t blockCntr = 0;
-    for (blockCntr = 0; blockCntr < 8; blockCntr++) {
-        while (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_BUSY));
-        I2C_TransferHandling(I2C_PERIPH_HWUNIT, I2C_PERIPH_IMU_ADDRESS, 129, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
-        while(I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_ISR_TXIS) == RESET);
-        I2C_SendData(I2C_PERIPH_HWUNIT, 0x40);
-        while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_TXE));
-
-        uint32_t byteCntr = 0;
-        for (byteCntr = 0; byteCntr < 128; byteCntr++) {
-            I2C_SendData(I2C_PERIPH_HWUNIT, &byteCntr);
-            while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_TXE));
-        }
-
-        I2C_TransferHandling(I2C_PERIPH_HWUNIT, I2C_PERIPH_IMU_ADDRESS, 0, I2C_AutoEnd_Mode,  I2C_Generate_Stop);
-        while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_STOPF));
-        I2C_ClearFlag(I2C_PERIPH_HWUNIT, I2C_FLAG_STOPF);
-    }
-
-}
-
 void halI2cImuInit(void)
 {
     i2cInit();

@@ -37,7 +37,7 @@ typedef struct FlightControllerMotorOutput {
     int32_t motorFrontRight;
 } FlightControllerMotorOutput;
 
-void flightControllerInit(uint32_t updateRate);
+void flightControllerInit(uint32_t updateRate, uint32_t motorControlResolution);
 
 void flightControllerUpdate(FlightControllerSetPoint *setPoint,
                             FlightControllerOrientationEstimate *orientationEstimate,
