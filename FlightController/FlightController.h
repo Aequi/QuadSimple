@@ -21,6 +21,10 @@ typedef struct FlightControllerSetPoint {
 typedef struct FlightControllerOrientationEstimate {
     Quaternion orientation;
 
+    float currentPitch;
+    float currentRoll;
+    float currentYaw;
+
     float x;
     float y;
     float z;

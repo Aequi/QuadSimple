@@ -3,7 +3,10 @@
 #include "HalGpio.h"
 #include "Delay.h"
 
-#define START_BIT   0x80
+#include <stddef.h>
+
+#define PACKET_LENGTH   9
+#define START_BIT       0x80
 
 ProtocolJoystickPacket joysticksStatePacket;
 
@@ -15,39 +18,44 @@ void rfTxReady()
     isRfTxReady = true;
 }
 
-uint8_t crcUpdate(uint8_t crc, uint8_t byte)
+static uint8_t crcUpdate(uint8_t crc, uint8_t byte)
 {
-    uint8_t val = (crc << 1) ^ byte, crcP = 0x89, j = 0;
-
-    uint8_t x = (val & 0x80) ? val ^ crcP : val;
-    for (j = 0; j < 7; ++j) {
-        x <<= 1;
-        if (x & 0x80) {
-            x ^= crcP;
-        }
+    const uint8_t poly = 0x07;
+    crc ^= byte;
+    for (uint32_t i = 0; i < 0x08; i++) {
+        crc = (crc << 1) ^ ((crc & 0x80) ? poly : 0);
     }
 
-    return x;
+    return crc;
 }
 
-uint8_t crc7(uint8_t buffer[], uint32_t length)
+static uint8_t crc8(uint8_t buffer[], uint32_t length)
 {
-    uint8_t crc7 = 0, bcnt = 0;
+    uint8_t crc8 = 0, bcnt = 0;
     for (bcnt = 0; bcnt < length; bcnt++) {
-        crc7 = crcUpdate(crc7, buffer[bcnt]);
+        crc8 = crcUpdate(crc8, buffer[bcnt]);
     }
 
-    return crc7;
+    return crc8;
 }
 
-void protocolUnpack(const uint8_t data[9])
+static void protocolUnpack(const uint8_t data[PACKET_LENGTH], ProtocolJoystickPacket *joystickData)
 {
-    joysticksStatePacket.joyLeftX;
+    if (data == NULL || joystickData == NULL) {
+        return;
+    }
+
+    joystickData->leftX = (((data[0] & 0x7F) | ((data[7] & 0x01) << 7)) << 4) | (((data[1] & 0x7F) | ((data[7] & 0x02) << 6)) >> 4);
+    joystickData->leftY = ((data[1] & 0x0F) << 8) | ((data[2] & 0x7F) | ((data[7] & 0x04) << 5));
+    joystickData->rightX = (((data[3] & 0x7F) | ((data[7] & 0x08) << 4)) << 4) | (((data[4] & 0x7F) | ((data[7] & 0x10) << 3)) >> 4);
+    joystickData->rightY = ((data[4] & 0x0F) << 8) | ((data[5] & 0x7F) | ((data[7] & 0x20) << 2));
+    joystickData->buttonCode = data[6];
+
 }
 
 static void protocolProcessByte(uint8_t dataByte)
 {
-    static uint8_t packet[9];
+    static uint8_t packet[PACKET_LENGTH];
     static bool isStartFound = false;
     static uint32_t byteCounter = 0;
 
@@ -57,12 +65,14 @@ static void protocolProcessByte(uint8_t dataByte)
         packet[byteCounter++] = dataByte;
     } else if (isStartFound) {
         packet[byteCounter++] = dataByte;
-        if (byteCounter < 9) {
+        if (byteCounter < PACKET_LENGTH) {
             return;
         }
 
-        if (crc7(packet, sizeof(packet)) == 0) {
-            protocolUnpack(packet);
+        packet[8] |= (packet[7] & 0x40) << 1;
+        packet[7] &= (~0x40);
+        if (crc8(packet, sizeof(packet)) == 0) {
+            protocolUnpack(packet, &joysticksStatePacket);
             isRfRxReady = true;
         } else {
             byteCounter = 0;

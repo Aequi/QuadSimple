@@ -400,6 +400,28 @@ static void flightControllerStart()
 
     spiHalImuReadOutStart();
 }
+#define M_PI_F  3.1415926535897932384626433832795f
+static float currentPitch, currentRoll, currentYaw;
+
+static void eulerFromQuaternion(Quaternion *quaternion)
+{
+    float gx = 2.0f * (quaternion->x * quaternion->z - quaternion->w * quaternion->y);
+    float gy = 2.0f * (quaternion->w * quaternion->x + quaternion->y * quaternion->z);
+    float gz = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
+
+    if (gx > 1.0f) {
+        gx = 1.0f;
+    }
+    if (gx < -1.0f) {
+        gx = -1.0f;
+    }
+
+  currentYaw = atan2f(2.0f * (quaternion->w * quaternion->z + quaternion->x * quaternion->y),
+                quaternion->w * quaternion->w + quaternion->x * quaternion->x - quaternion->y * quaternion->y - quaternion->z * quaternion->z) * 180.0f / M_PI_F;
+  currentPitch = asinf(gx) * 180.0f / M_PI_F;
+  currentRoll = atan2f(gy, gz) * 180.0f / M_PI_F;
+}
+
 
 float magnetometerBias[3], magnetometerSensitivity[3];
 

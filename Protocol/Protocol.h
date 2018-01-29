@@ -6,10 +6,10 @@
 
 #pragma pack(push, 1)
 typedef struct ProtocolJoystickPacket {
-    uint16_t joyLeftX;
-    uint16_t joyLeftY;
-    uint16_t joyRightX;
-    uint16_t joyRightY;
+    uint16_t leftX;
+    uint16_t leftY;
+    uint16_t rightX;
+    uint16_t rightY;
     uint8_t buttonCode;
 } ProtocolJoystickPacket;
 #pragma pack(pop)
