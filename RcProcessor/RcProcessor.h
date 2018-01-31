@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void rcProcessorInit(void);
+#include "FlightController.h"
+#include "Protocol.h"
+
+void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystickPacket *joystickPacket, FlightControllerOrientationEstimate *flightControllerOrientatonEstimate, float maxOutputValue);
 
 #endif

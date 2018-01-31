@@ -1,8 +1,7 @@
 #include "SensorSystem.h"
-#if 0
-#include "SpiHal.h"
-#include "stm32f4xx_conf.h"
+#include "HalI2c.h"
 
+#if 0
 static void imuWriteBuff(uint8_t address, const uint8_t data[], uint32_t size)
 {
     uint32_t cntr = 0;
@@ -487,3 +486,18 @@ static void onImuFrameReady(void)
 }
 
 #endif
+
+void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb)
+{
+
+}
+
+void sensorSystemCalibrate(void)
+{
+
+}
+
+void sensorSystemGetCurrentOrientation(FlightControllerOrientationEstimate *orientationEstimate)
+{
+
+}
