@@ -2,8 +2,8 @@
 #include "HalCommon.h"
 #include "stm32f0xx_conf.h"
 
-#define HAL_ADC_BATTERY_PIN                             GPIO_Pin_5
-#define HAL_ADC_BATTERY_PORT                            GPIOA
+#define HAL_ADC_BATTERY_PIN     GPIO_Pin_5
+#define HAL_ADC_BATTERY_PORT    GPIOA
 
 static uint16_t adcDataArray[2][ADC_BUFF_SIZE * ADC_CHANNEL_COUNT];
 

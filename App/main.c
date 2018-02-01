@@ -17,6 +17,7 @@
 
 static bool isTimerEvent = false;
 static uint32_t rcAliveTimer = 0;
+
 void delayTimerEventHandler(void)
 {
     if (rcAliveTimer++ >= RC_ALIVE_TIMEOUT) {
@@ -49,7 +50,7 @@ void onSensorSystemUpdate(void)
     halPwmSetChannelValue(PWM_CHANNEL_0, motorOutput.motorFrontLeft);
     halPwmSetChannelValue(PWM_CHANNEL_1, motorOutput.motorBackLeft);
     halPwmSetChannelValue(PWM_CHANNEL_2, motorOutput.motorBackRight);
-    halPwmSetChannelValue(PWM_CHANNEL_2, motorOutput.motorFrontRight);
+    halPwmSetChannelValue(PWM_CHANNEL_3, motorOutput.motorFrontRight);
 }
 
 int main(void)
