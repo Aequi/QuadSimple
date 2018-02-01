@@ -7,6 +7,8 @@
 #include "FlightController.h"
 #include "Protocol.h"
 
-void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystickPacket *joystickPacket, FlightControllerOrientationEstimate *flightControllerOrientatonEstimate, float maxOutputValue);
+void rcProcessorInit(FlightControllerOrientationEstimate *flightControllerOrientatonEstimate, float maxOutputValue);
+void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystickPacket *joystickPacket, FlightControllerOrientationEstimate *flightControllerOrientatonEstimate);
+void rcProcessorGetIdleSetPoint(FlightControllerSetPoint *setPoint, FlightControllerOrientationEstimate *flightControllerOrientatonEstimate);
 
 #endif

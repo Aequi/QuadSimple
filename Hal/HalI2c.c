@@ -51,7 +51,6 @@ static void i2cInit(void)
     EXTI_Init(&extiInitStructure);
     NVIC_EnableIRQ(EXTI0_1_IRQn);
 
-
     GPIO_PinAFConfig(HAL_I2C_IMU_PORT, HAL_I2C_IMU_SDA_PIN_SOURCE, GPIO_AF_4);
     GPIO_PinAFConfig(HAL_I2C_IMU_PORT, HAL_I2C_IMU_SCL_PIN_SOURCE, GPIO_AF_4);
 

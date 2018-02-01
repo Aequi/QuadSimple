@@ -11,12 +11,18 @@
 #include "HalCommon.h"
 #include "HalPwm.h"
 
-#define TIMER_EVENT_PERIOD  100
+#define TIMER_EVENT_PERIOD          100
+#define RC_ALIVE_TIMEOUT            1000
+#define SENSOR_STARTUP_TIMEOUT      1000
 
 static bool isTimerEvent = false;
-
+static uint32_t rcAliveTimer = 0;
 void delayTimerEventHandler(void)
 {
+    if (rcAliveTimer++ >= RC_ALIVE_TIMEOUT) {
+        rcAliveTimer = RC_ALIVE_TIMEOUT;
+    }
+
     static uint32_t counter = 0;
     if (counter++ >= TIMER_EVENT_PERIOD) {
         counter = 0;
@@ -32,7 +38,13 @@ static FlightControllerMotorOutput motorOutput;
 void onSensorSystemUpdate(void)
 {
     sensorSystemGetCurrentOrientation(&orientationEstimate);
-    rcProcessorGetSetPoint(&setPoint, &joysticksStatePacket, &orientationEstimate, PWM_MAX);
+
+    if (rcAliveTimer >= RC_ALIVE_TIMEOUT) {
+        rcProcessorGetIdleSetPoint(&setPoint, &orientationEstimate);
+    } else {
+        rcProcessorGetSetPoint(&setPoint, &joysticksStatePacket, &orientationEstimate);
+    }
+
     flightControllerUpdate(&setPoint, &orientationEstimate, &motorOutput);
     halPwmSetChannelValue(PWM_CHANNEL_0, motorOutput.motorFrontLeft);
     halPwmSetChannelValue(PWM_CHANNEL_1, motorOutput.motorBackLeft);
@@ -46,13 +58,19 @@ int main(void)
     delayInit(delayTimerEventHandler);
     batteryMonitorInit();
     protocolInit(false);
-    sensorSystemCalibrate();
     sensorSystemInit(onSensorSystemUpdate);
+    sensorSystemCalibrate();
+    delayMs(SENSOR_STARTUP_TIMEOUT);
+    sensorSystemGetCurrentOrientation(&orientationEstimate);
     flightControllerInit(SENSOR_SYSTEM_UPDATE_RATE, PWM_MAX);
+    rcProcessorInit(&orientationEstimate, PWM_MAX);
+    sensorSystemStartUpdateEvent();
+
     for (;;) {
         protocolProcess();
         if (protocolIsPacketReady()) {
             joysticksStatePacket = protocolGetJoystickValues();
+            rcAliveTimer = 0;
         }
 
         if (isTimerEvent) {

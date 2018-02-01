@@ -501,3 +501,8 @@ void sensorSystemGetCurrentOrientation(FlightControllerOrientationEstimate *orie
 {
 
 }
+
+void sensorSystemStartUpdateEvent(void)
+{
+
+}
