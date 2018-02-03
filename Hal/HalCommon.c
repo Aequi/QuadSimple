@@ -34,25 +34,25 @@ void DMA1_Channel4_5_IRQHandler()
 {
     if (DMA_GetITStatus(DMA1_IT_TC4)) {
         DMA_ClearITPendingBit(DMA1_IT_TC4);
-        if (dmaCh4Cb)
+        if (dmaCh4Cb != NULL)
             dmaCh4Cb(false);
     }
 
     if (DMA_GetITStatus(DMA1_IT_HT4)) {
         DMA_ClearITPendingBit(DMA1_IT_HT4);
-        if (dmaCh4Cb)
+        if (dmaCh4Cb != NULL)
             dmaCh4Cb(true);
     }
 
     if (DMA_GetITStatus(DMA1_IT_TC5)) {
         DMA_ClearITPendingBit(DMA1_IT_TC5);
-        if (dmaCh5Cb)
+        if (dmaCh5Cb != NULL)
             dmaCh5Cb(false);
     }
 
     if (DMA_GetITStatus(DMA1_IT_HT5)) {
         DMA_ClearITPendingBit(DMA1_IT_HT5);
-        if (dmaCh5Cb)
+        if (dmaCh5Cb != NULL)
             dmaCh5Cb(true);
     }
 }
@@ -61,25 +61,25 @@ void DMA1_Channel2_3_IRQHandler(void)
 {
     if (DMA_GetITStatus(DMA1_IT_TC2)) {
         DMA_ClearITPendingBit(DMA1_IT_TC2);
-        if (dmaCh2Cb)
+        if (dmaCh2Cb != NULL)
             dmaCh2Cb(false);
     }
 
     if (DMA_GetITStatus(DMA1_IT_HT2)) {
         DMA_ClearITPendingBit(DMA1_IT_HT2);
-        if (dmaCh2Cb)
+        if (dmaCh2Cb != NULL)
             dmaCh2Cb(true);
     }
 
     if (DMA_GetITStatus(DMA1_IT_TC3)) {
         DMA_ClearITPendingBit(DMA1_IT_TC3);
-        if (dmaCh3Cb)
+        if (dmaCh3Cb != NULL)
             dmaCh3Cb(false);
     }
 
     if (DMA_GetITStatus(DMA1_IT_HT3)) {
         DMA_ClearITPendingBit(DMA1_IT_HT3);
-        if (dmaCh3Cb)
+        if (dmaCh3Cb != NULL)
             dmaCh3Cb(true);
     }
 }
@@ -88,13 +88,13 @@ void DMA1_Channel1_IRQHandler()
 {
     if (DMA_GetITStatus(DMA1_IT_TC1)) {
         DMA_ClearITPendingBit(DMA1_IT_TC1);
-        if (dmaCh1Cb)
+        if (dmaCh1Cb != NULL)
             dmaCh1Cb(false);
     }
 
     if (DMA_GetITStatus(DMA1_IT_HT1)) {
         DMA_ClearITPendingBit(DMA1_IT_HT1);
-        if (dmaCh1Cb)
+        if (dmaCh1Cb != NULL)
             dmaCh1Cb(true);
     }
 }

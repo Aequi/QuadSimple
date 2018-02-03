@@ -65,7 +65,7 @@ static void uartRfDmaTxCompleteHandler(bool isHalf)
     if (!isHalf) {
         DMA_Cmd(DMA1_Channel4, DISABLE);
         uartRfDmaTxActive = false;
-        if (uartRfDmaTxCompleteCb)
+        if (uartRfDmaTxCompleteCb != NULL)
             uartRfDmaTxCompleteCb();
     }
 }

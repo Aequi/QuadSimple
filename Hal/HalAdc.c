@@ -2,6 +2,8 @@
 #include "HalCommon.h"
 #include "stm32f0xx_conf.h"
 
+#include <stddef.h>
+
 #define HAL_ADC_BATTERY_PIN     GPIO_Pin_5
 #define HAL_ADC_BATTERY_PORT    GPIOA
 
@@ -12,10 +14,10 @@ static HalAdcDataReady halAdcDataReadyCallback;
 static void halAdcDmaHandler(bool isHalf)
 {
     if (isHalf) {
-        if (halAdcDataReadyCallback)
+        if (halAdcDataReadyCallback != NULL)
             halAdcDataReadyCallback((const uint16_t *) adcDataArray[0], sizeof(adcDataArray[0]) / sizeof(adcDataArray[0][0]));
     } else {
-        if (halAdcDataReadyCallback)
+        if (halAdcDataReadyCallback != NULL)
             halAdcDataReadyCallback((const uint16_t *) adcDataArray[1], sizeof(adcDataArray[1]) / sizeof(adcDataArray[0][0]));
     }
 }

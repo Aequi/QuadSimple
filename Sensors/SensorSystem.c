@@ -1,172 +1,212 @@
 #include "SensorSystem.h"
 #include "HalI2c.h"
 
-#if 0
-static void imuWriteBuff(uint8_t address, const uint8_t data[], uint32_t size)
+#include <stddef.h>
+
+#define REG_ADDR_SMPLRT_DIV         0x19
+#define REG_ADDR_CONFIG             0x1A
+#define REG_ADDR_GYRO_CONFIG        0x1B
+#define REG_ADDR_ACCEL_CONFIG       0x1C
+#define REG_ADDR_INT_PIN_CFG        0x37
+#define REG_ADDR_INT_ENABLE         0x38
+#define REG_ADDR_INT_STATUS         0x3A
+
+#define REG_ADDR_ACCEL_XOUT_H       0x3B
+#define REG_ADDR_ACCEL_XOUT_L       0x3C
+#define REG_ADDR_ACCEL_YOUT_H       0x3D
+#define REG_ADDR_ACCEL_YOUT_L       0x3E
+#define REG_ADDR_ACCEL_ZOUT_H       0x3F
+#define REG_ADDR_ACCEL_ZOUT_L       0x40
+#define REG_ADDR_TEMP_OUT_H         0x41
+#define REG_ADDR_TEMP_OUT_L         0x42
+#define REG_ADDR_GYRO_XOUT_H        0x43
+#define REG_ADDR_GYRO_XOUT_L        0x44
+#define REG_ADDR_GYRO_YOUT_H        0x45
+#define REG_ADDR_GYRO_YOUT_L        0x46
+#define REG_ADDR_GYRO_ZOUT_H        0x47
+#define REG_ADDR_GYRO_ZOUT_L        0x48
+
+#define REG_ADDR_SIGNAL_PATH_RES    0x68
+#define REG_ADDR_USER_CTRL          0x6A
+#define REG_ADDR_PWR_MGMT_1         0x6B
+#define REG_ADDR_PWR_MGMT_2         0x6C
+
+#define REG_ADDR_XG_OFFS_TC         0x00
+#define REG_ADDR_YG_OFFS_TC         0x01
+#define REG_ADDR_ZG_OFFS_TC         0x02
+#define REG_ADDR_X_FINE_GAIN        0x03
+#define REG_ADDR_Y_FINE_GAIN        0x04
+#define REG_ADDR_Z_FINE_GAIN        0x05
+#define REG_ADDR_XA_OFFS_H          0x06
+#define REG_ADDR_XA_OFFS_L_TC       0x07
+#define REG_ADDR_YA_OFFS_H          0x08
+#define REG_ADDR_YA_OFFS_L_TC       0x09
+#define REG_ADDR_ZA_OFFS_H          0x0A
+#define REG_ADDR_ZA_OFFS_L_TC       0x0B
+#define REG_ADDR_SELF_TEST_X        0x0D
+#define REG_ADDR_SELF_TEST_Y        0x0E
+#define REG_ADDR_SELF_TEST_Z        0x0F
+#define REG_ADDR_SELF_TEST_A        0x10
+#define REG_ADDR_XG_OFFS_USRH       0x13
+#define REG_ADDR_XG_OFFS_USRL       0x14
+#define REG_ADDR_YG_OFFS_USRH       0x15
+#define REG_ADDR_YG_OFFS_USRL       0x16
+#define REG_ADDR_ZG_OFFS_USRH       0x17
+#define REG_ADDR_ZG_OFFS_USRL       0x18
+
+#define I2C_PERIPH_IMU_ADDRESS      (0x68 << 1)
+
+static int8_t getXFineGain(void)
 {
-    uint32_t cntr = 0;
-    for (cntr = 0; cntr < size; cntr++)
-        spiHalImuWriteReg(address++, data[cntr]);
+    return i2cRead(MPU_6050_ADDRESS, MPU6050_RA_X_FINE_GAIN);
 }
 
-static void imuReadBuff(uint8_t address, uint8_t data[], uint32_t size)
+static void setXFineGain(int8_t gain)
 {
-    uint32_t cntr = 0;
-    for (cntr = 0; cntr < size; cntr++)
-        data[cntr] = spiHalImuReadReg(address++);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_X_FINE_GAIN, gain);
 }
 
-uint8_t magCalibrationX;
-uint8_t magCalibrationY;
-uint8_t magCalibrationZ;
-
-float fMagCalibrationX;
-float fMagCalibrationY;
-float fMagCalibrationZ;
-void sensorSystemInit(void)
+static int8_t getYFineGain(void)
 {
-    const uint8_t imuSensorConfig[] = {0x01, 0x01, 0x18, 0x10, 0x01};
-    const uint8_t imuIntConfig[] = {0x10, 0x01};
-    const uint8_t imuPwrConfig[] = {0x30, 0x00, 0x00};
-
-    const uint8_t imuSlaveI2cConfig1[] = {0x09};
-    const uint8_t imuSlaveI2cConfig2[] = {0x0C, 0x0A, 0x16, 0x80};
-    const uint8_t imuSlaveI2cConfig4[] = {0x0C, 0x0A, 0x0F, 0x80};
-    const uint8_t imuSlaveI2cConfig3[] = {0x8C, 0x03, 0x87};
-
-    const uint8_t imuSlaveI2cConfig5[] = {0x8C, 0x10, 0x00, 0x80};
-    const uint8_t imuSlaveI2cConfig6[] = {0x8C, 0x11, 0x00, 0x80};
-    const uint8_t imuSlaveI2cConfig7[] = {0x8C, 0x12, 0x00, 0x80};
-
-    imuWriteBuff(IMU_REG_USER_CTRL, imuPwrConfig, sizeof(imuPwrConfig));
-    imuWriteBuff(IMU_REG_SMPLRT_DIV, imuSensorConfig, sizeof(imuSensorConfig));
-    imuWriteBuff(IMU_REG_INT_PIN_CFG, imuIntConfig, sizeof(imuIntConfig));
-
-    imuWriteBuff(IMU_REG_I2C_MST_CTRL, imuSlaveI2cConfig1, sizeof(imuSlaveI2cConfig1));
-    uint8_t i2cStatus = 0;
-
-    imuWriteBuff(IMU_REG_I2C_SLV4_ADDR, imuSlaveI2cConfig4, sizeof(imuSlaveI2cConfig4));
-    do {
-        imuReadBuff(IMU_REG_I2C_MST_STATUS, &i2cStatus, sizeof(i2cStatus));
-    } while (!(i2cStatus & (1 << 6)));
-
-    imuWriteBuff(IMU_REG_I2C_SLV4_ADDR, imuSlaveI2cConfig5, sizeof(imuSlaveI2cConfig5));
-    do {
-        imuReadBuff(IMU_REG_I2C_MST_STATUS, &i2cStatus, sizeof(i2cStatus));
-    } while (!(i2cStatus & (1 << 6)));
-    imuReadBuff(IMU_REG_I2C_SLV4_DI, &magCalibrationX, sizeof(magCalibrationX));
-
-    imuWriteBuff(IMU_REG_I2C_SLV4_ADDR, imuSlaveI2cConfig6, sizeof(imuSlaveI2cConfig6));
-    do {
-        imuReadBuff(IMU_REG_I2C_MST_STATUS, &i2cStatus, sizeof(i2cStatus));
-    } while (!(i2cStatus & (1 << 6)));
-    imuReadBuff(IMU_REG_I2C_SLV4_DI, &magCalibrationY, sizeof(magCalibrationY));
-
-    imuWriteBuff(IMU_REG_I2C_SLV4_ADDR, imuSlaveI2cConfig7, sizeof(imuSlaveI2cConfig7));
-    do {
-        imuReadBuff(IMU_REG_I2C_MST_STATUS, &i2cStatus, sizeof(i2cStatus));
-    } while (!(i2cStatus & (1 << 6)));
-    imuReadBuff(IMU_REG_I2C_SLV4_DI, &magCalibrationZ, sizeof(magCalibrationZ));
-
-    imuWriteBuff(IMU_REG_I2C_SLV4_ADDR, imuSlaveI2cConfig2, sizeof(imuSlaveI2cConfig2));
-    do {
-        imuReadBuff(IMU_REG_I2C_MST_STATUS, &i2cStatus, sizeof(i2cStatus));
-    } while (!(i2cStatus & (1 << 6)));
-
-    imuWriteBuff(IMU_REG_I2C_SLV0_ADDR, imuSlaveI2cConfig3, sizeof(imuSlaveI2cConfig3));
-
-    fMagCalibrationX = (((float) magCalibrationX - 128.0f) / 256.0f + 1.0f);
-    fMagCalibrationY = (((float) magCalibrationY - 128.0f) / 256.0f + 1.0f);
-    fMagCalibrationZ = (((float) magCalibrationZ - 128.0f) / 256.0f + 1.0f);
+    return i2cRead(MPU_6050_ADDRESS, MPU6050_RA_Y_FINE_GAIN);
 }
-/*
+
+void setYFineGain(int8_t gain)
+{
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_Y_FINE_GAIN, gain);
+}
+
+static int8_t getZFineGain(void)
+{
+    return i2cRead(MPU_6050_ADDRESS, MPU6050_RA_Z_FINE_GAIN);
+}
+
+static void setZFineGain(int8_t gain)
+{
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_Z_FINE_GAIN, gain);
+}
+
 static int16_t getXAccelOffset(void)
 {
     uint8_t buffer[2];
-    buffer[0] = spiHalImuReadReg(IMU_REG_XA_OFFSET_H);
-    buffer[1] = spiHalImuReadReg(IMU_REG_XA_OFFSET_L);
-
+    buffer[0] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_XA_OFFS_H);
+    buffer[1] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_XA_OFFS_H + 1);
     return (((int16_t) buffer[0]) << 8) | buffer[1];
 }
 
 static void setXAccelOffset(int16_t offset)
 {
-    spiHalImuWriteReg(IMU_REG_XA_OFFSET_H, offset >> 8);
-    spiHalImuWriteReg(IMU_REG_XA_OFFSET_L, offset);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_XA_OFFS_H, offset >> 8);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_XA_OFFS_H + 1, offset);
 }
 
 static int16_t getYAccelOffset(void)
 {
     uint8_t buffer[2];
-    buffer[0] = spiHalImuReadReg(IMU_REG_YA_OFFSET_H);
-    buffer[1] = spiHalImuReadReg(IMU_REG_YA_OFFSET_L);
-
-    return (((int16_t) buffer[0]) << 8) | buffer[1];
+    buffer[0] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_YA_OFFS_H);
+    buffer[1] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_YA_OFFS_H + 1);
+    return (((int16_t)buffer[0]) << 8) | buffer[1];
 }
 
 static void setYAccelOffset(int16_t offset)
 {
-    spiHalImuWriteReg(IMU_REG_YA_OFFSET_H, offset >> 8);
-    spiHalImuWriteReg(IMU_REG_YA_OFFSET_L, offset);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_YA_OFFS_H, offset >> 8);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_YA_OFFS_H + 1, offset);
 }
 
 static int16_t getZAccelOffset(void)
 {
     uint8_t buffer[2];
-    buffer[0] = spiHalImuReadReg(IMU_REG_ZA_OFFSET_H);
-    buffer[1] = spiHalImuReadReg(IMU_REG_ZA_OFFSET_L);
-
-    return (((int16_t) buffer[0]) << 8) | buffer[1];
+    buffer[0] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_ZA_OFFS_H);
+    buffer[1] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_ZA_OFFS_H + 1);
+    return (((int16_t)buffer[0]) << 8) | buffer[1];
 }
 
 static void setZAccelOffset(int16_t offset)
 {
-    spiHalImuWriteReg(IMU_REG_ZA_OFFSET_H, offset >> 8);
-    spiHalImuWriteReg(IMU_REG_ZA_OFFSET_L, offset);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_ZA_OFFS_H, offset >> 8);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_ZA_OFFS_H + 1, offset);
 }
 
 static int16_t getXGyroOffset(void)
 {
     uint8_t buffer[2];
-    buffer[0] = spiHalImuReadReg(IMU_REG_XG_OFFSET_H);
-    buffer[1] = spiHalImuReadReg(IMU_REG_XG_OFFSET_L);
-
-    return (((int16_t) buffer[0]) << 8) | buffer[1];
+    buffer[0] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_XG_OFFS_USRH);
+    buffer[1] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_XG_OFFS_USRH + 1);
+    return (((int16_t)buffer[0]) << 8) | buffer[1];
 }
-*/
+
 static void setXGyroOffset(int16_t offset)
 {
-    spiHalImuWriteReg(IMU_REG_XG_OFFSET_H, offset >> 8);
-    spiHalImuWriteReg(IMU_REG_XG_OFFSET_L, offset);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_XG_OFFS_USRH, offset >> 8);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_XG_OFFS_USRH + 1, offset);
 }
-/*
-static int16_t getYGyroOffset(void)
+
+static int16_t getYGyroOffset()
 {
     uint8_t buffer[2];
-    buffer[0] = spiHalImuReadReg(IMU_REG_YG_OFFSET_H);
-    buffer[1] = spiHalImuReadReg(IMU_REG_YG_OFFSET_L);
+    buffer[0] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_YG_OFFS_USRH);
+    buffer[1] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_YG_OFFS_USRH + 1);
+    return (((int16_t)buffer[0]) << 8) | buffer[1];
+}
 
-    return (((int16_t) buffer[0]) << 8) | buffer[1];
+static void setYGyroOffset(int16_t offset)
+{
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_YG_OFFS_USRH, offset >> 8);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_YG_OFFS_USRH + 1, offset);
 }
-*/
-static void setYGyroOffset(int16_t offset) {
-    spiHalImuWriteReg(IMU_REG_YG_OFFSET_H, offset >> 8);
-    spiHalImuWriteReg(IMU_REG_YG_OFFSET_L, offset);
-}
-/*
-static int16_t getZGyroOffset(void)
+
+static int16_t getZGyroOffset()
 {
     uint8_t buffer[2];
-    buffer[0] = spiHalImuReadReg(IMU_REG_ZG_OFFSET_H);
-    buffer[1] = spiHalImuReadReg(IMU_REG_ZG_OFFSET_L);
-
-    return (((int16_t) buffer[0]) << 8) | buffer[1];
+    buffer[0] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_ZG_OFFS_USRH);
+    buffer[1] = i2cRead(MPU_6050_ADDRESS, MPU6050_RA_ZG_OFFS_USRH + 1);
+    return (((int16_t)buffer[0]) << 8) | buffer[1];
 }
-*/
+
 static void setZGyroOffset(int16_t offset)
 {
-    spiHalImuWriteReg(IMU_REG_ZG_OFFSET_H, offset >> 8);
-    spiHalImuWriteReg(IMU_REG_ZG_OFFSET_L, offset);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_ZG_OFFS_USRH, offset >> 8);
+    i2cWrite(MPU_6050_ADDRESS, MPU6050_RA_ZG_OFFS_USRH + 1, offset);
+}
+
+SensorSystemUpdateCallback sensorSystemUpdateCallback;
+
+static void onI2cDmaReadyEvent(void)
+{
+    if (sensorSystemUpdateCallback != NULL) {
+        sensorSystemUpdateCallback();
+    }
+}
+
+static void onIntEvent(void)
+{
+
+}
+
+static void setupImu(uint8_t sampleRateDiv, uint8_t dlpf, uint8_t gyroFsel, uint8_t accFsel)
+{
+    i2cWrite(MPU_6050_ADDRESS, REG_ADDR_PWR_MGMT_1, 0x01);
+
+    i2cWrite(MPU_6050_ADDRESS, REG_ADDR_SMPLRT_DIV, sampleRateDiv);
+    i2cWrite(MPU_6050_ADDRESS, REG_ADDR_CONFIG, dlpf);
+    i2cWrite(MPU_6050_ADDRESS, REG_ADDR_GYRO_CONFIG, gyroFsel << 3);
+    i2cWrite(MPU_6050_ADDRESS, REG_ADDR_ACCEL_CONFIG, accFsel << 3);
+
+    i2cWrite(MPU_6050_ADDRESS, REG_ADDR_INT_PIN_CFG, 0x10);
+}
+
+void setupImuInt(bool isEnabled)
+{
+    i2cWrite(MPU_6050_ADDRESS, REG_ADDR_INT_ENABLE, isEnabled ? 0x01 : 0x00);
+    i2cRead(MPU_6050_ADDRESS, REG_ADDR_INT_STATUS);
+}
+
+#if 0
+
+static uint32_t absI(int32_t value)
+{
+    return value < 0 ? -value : value;
 }
 
 static void getImuValues(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz)
@@ -204,16 +244,12 @@ static void getImuValues(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int
     *gz = *((uint16_t *) &mpuData[10]);
 }
 
-uint32_t absI(int32_t val)
-{
-    return val < 0 ? -val : val;
-}
-
 static void getMeanValues(int32_t *meanAx, int32_t *meanAy, int32_t *meanAz, int32_t *meanGx, int32_t *meanGy, int32_t *meanGz)
 {
     #define AVERAGING_FACTOR    8000
     int16_t ax, ay, az, gx, gy, gz;
     uint32_t i = 0;
+
     *meanAx = 0;
     *meanAy = 0;
     *meanAz = 0;
@@ -230,6 +266,7 @@ static void getMeanValues(int32_t *meanAx, int32_t *meanAy, int32_t *meanAz, int
         *meanGy += gy;
         *meanGz += gz;
     }
+
     *meanAx /= AVERAGING_FACTOR;
     *meanAy /= AVERAGING_FACTOR;
     *meanAz /= AVERAGING_FACTOR;
@@ -275,25 +312,102 @@ void calibrationProcess(int32_t *gxOffset, int32_t *gyOffset, int32_t *gzOffset,
         if (isXaReady && isYaReady && isZaReady)
             break;
     }
+
+  ax_offset=-mean_ax/8;
+  ay_offset=-mean_ay/8;
+  az_offset=(8192-mean_az)/8;
+
+  gx_offset=-mean_gx/4;
+  gy_offset=-mean_gy/4;
+  gz_offset=-mean_gz/4;
+  uint8_t xorSt = 0;
+  while (1){
+    int ready=0;
+
+    setXAccelOffset(ax_offset);
+    setYAccelOffset(ay_offset);
+    setZAccelOffset(az_offset);
+
+    setXGyroOffset(gx_offset);
+    setYGyroOffset(gy_offset);
+    setZGyroOffset(gz_offset);
+
+    meansensors();
+    if (xorSt)
+        LCDStr(0, 15, "...");
+    else
+        LCDStr(0, 15, "   ");
+    xorSt ^= 1;
+
+    if (abs(mean_ax)<=acel_deadzone) ready++;
+    else ax_offset=ax_offset-mean_ax/acel_deadzone;
+
+    if (abs(mean_ay)<=acel_deadzone) ready++;
+    else ay_offset=ay_offset-mean_ay/acel_deadzone;
+
+    if (abs(8192-mean_az)<=acel_deadzone) ready++;
+    else az_offset=az_offset+(8192-mean_az)/acel_deadzone;
+
+    if (abs(mean_gx)<=giro_deadzone) ready++;
+    else gx_offset=gx_offset-mean_gx/(giro_deadzone+1);
+
+    if (abs(mean_gy)<=giro_deadzone) ready++;
+    else gy_offset=gy_offset-mean_gy/(giro_deadzone+1);
+
+    if (abs(mean_gz)<=giro_deadzone) ready++;
+    else gz_offset=gz_offset-mean_gz/(giro_deadzone+1);
+
+    if (ready==6) break;
+  }
+
+       uint32_t cnt;
+  if (state==0){
+    meansensors();
+    state++;
+
+    for (cnt=0;cnt<10000000;cnt++);
+  }
+
+  if (state==1) {
+    calibration();
+    state++;
+    for (cnt=0;cnt<10000000;cnt++);
+  }
+
+  if (state==2) {
+    meansensors();
+    LCDStr(0, 0, "FINISHED!");
+    LCDStr(0, 1, "Readings:");
+    char val[10];
+    itoa(mean_ax, val);
+    LCDStr(0, 2, val);
+    itoa(mean_ay, val);
+    LCDStr(0, 3, val);
+    itoa(mean_az, val);
+    LCDStr(0, 4, val);
+    itoa(mean_gx, val);
+    LCDStr(0, 5, val);
+    itoa(mean_gy, val);
+    LCDStr(0, 6, val);
+    itoa(mean_gz, val);
+    LCDStr(0, 7, val);
+    LCDStr(0, 8, "Offsets:");
+    itoa(ax_offset, val);
+    LCDStr(0, 9, val);
+    itoa(ay_offset, val);
+    LCDStr(0, 10, val);
+    itoa(az_offset, val);
+    LCDStr(0, 11, val);
+    itoa(gx_offset, val);
+    LCDStr(0, 12, val);
+    itoa(gy_offset, val);
+    LCDStr(0, 13, val);
+    itoa(gz_offset, val);
+    LCDStr(0, 14, val);
+    while (1);
+  }
+
 }
-
-void readMagData(int16_t * destination)
-{
-    imuReadBuff(IMU_REG_EXT_SENS_DATA_00, (uint8_t *) destination, 6);
-}
-
-#define SECTOR_7_START  0x08060000
-#define SECTOR_NUM      FLASH_Sector_7
-#define WATERMARK       0xC0FEBABE
-
-
-typedef struct MagCalibration {
-    float magnetometerBias[3];
-    float magnetometerSensitivity[3];
-    uint32_t watermark;
-} MagCalibration;
-
-MagCalibration magCalibration, magOld;
 
 void sensorSystemCalibrate(float magnetometerBias[3], float magnetometerSensitivity[3], bool isBiasUpdateNeeded)
 {
@@ -307,98 +421,8 @@ void sensorSystemCalibrate(float magnetometerBias[3], float magnetometerSensitiv
         setYGyroOffset(gyOffset);
         setZGyroOffset(gzOffset);
     }
-
-    uint32_t cntr1 = 0, cntr2 = 0, cntr3 = 0, sample_count = 0;
-    int32_t mag_bias[3] = {0, 0, 0}, mag_scale[3] = {0, 0, 0};
-    int16_t mag_max[3] = {0x8000, 0x8000, 0x8000}, mag_min[3] = {0x7FFF, 0x7FFF, 0x7FFF}, mag_temp[3] = {0, 0, 0};
-
-    sample_count = 6;
-    for(cntr1 = 0; cntr1 < sample_count; cntr1++) {
-        readMagData(mag_temp);
-        for (cntr2 = 0; cntr2 < 3; cntr2++) {
-            if(mag_temp[cntr2] > mag_max[cntr2]) {
-                 mag_max[cntr2] = mag_temp[cntr2];
-            }
-            if(mag_temp[cntr2] < mag_min[cntr2]) {
-                mag_min[cntr2] = mag_temp[cntr2];
-            }
-        }
-        for (cntr3 = 0; cntr3 < 3; cntr3++);
-    }
-
-    mag_bias[0] = (mag_max[0] + mag_min[0]) / 2;
-    mag_bias[1] = (mag_max[1] + mag_min[1]) / 2;
-    mag_bias[2] = (mag_max[2] + mag_min[2]) / 2;
-
-    const float magResolution = 4912.0f / 32760.0f;
-
-    magnetometerBias[0] = (float) mag_bias[0] * magResolution * fMagCalibrationX;
-    magnetometerBias[1] = (float) mag_bias[1] * magResolution * fMagCalibrationY;
-    magnetometerBias[2] = (float) mag_bias[2] * magResolution * fMagCalibrationZ;
-
-    mag_scale[0] = (mag_max[0] - mag_min[0]) / 2;
-    mag_scale[1] = (mag_max[1] - mag_min[1]) / 2;
-    mag_scale[2] = (mag_max[2] - mag_min[2]) / 2;
-
-    const float avg_rad = (mag_scale[0] + mag_scale[1] + mag_scale[2]) / 3.0f;
-
-    magnetometerSensitivity[0] = avg_rad / ((float) mag_scale[0]);
-    magnetometerSensitivity[1] = avg_rad / ((float) mag_scale[1]);
-    magnetometerSensitivity[2] = avg_rad / ((float) mag_scale[2]);
-
-    magCalibration.magnetometerBias[0] = magnetometerBias[0];
-    magCalibration.magnetometerBias[1] = magnetometerBias[1];
-    magCalibration.magnetometerBias[2] = magnetometerBias[2];
-
-    magCalibration.magnetometerSensitivity[0] = magnetometerSensitivity[0];
-    magCalibration.magnetometerSensitivity[1] = magnetometerSensitivity[1];
-    magCalibration.magnetometerSensitivity[2] = magnetometerSensitivity[2];
-
-    magCalibration.watermark = WATERMARK;
-    magOld = *((MagCalibration *) SECTOR_7_START);
-    if ((((MagCalibration *) SECTOR_7_START))->watermark != WATERMARK) {
-        FLASH_Unlock();
-        uint32_t cntr;
-        for (cntr = 0; cntr < 1000; cntr++);
-
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGPERR | FLASH_FLAG_WRPERR);
-        FLASH_WaitForLastOperation();
-        FLASH_EraseSector(SECTOR_NUM, VoltageRange_3);
-        FLASH_WaitForLastOperation();
-        for (cntr = 0; cntr < sizeof(magCalibration); cntr++) {
-            while (FLASH_ProgramByte(SECTOR_7_START + cntr, ((uint8_t *) &magCalibration)[cntr]) != FLASH_COMPLETE) {
-
-            }
-            FLASH_WaitForLastOperation();
-        }
-        FLASH_Lock();
-    }
-    magnetometerBias[0] = magOld.magnetometerBias[0];
-    magnetometerBias[1] = magOld.magnetometerBias[1];
-    magnetometerBias[2] = magOld.magnetometerBias[2];
-    magnetometerSensitivity[0] = magOld.magnetometerSensitivity[0];
-    magnetometerSensitivity[1] = magOld.magnetometerSensitivity[1];
-    magnetometerSensitivity[2] = magOld.magnetometerSensitivity[2];
 }
 
-void clearFlash(void) {
-    FLASH_Unlock();
-    FLASH_EraseSector(SECTOR_NUM, VoltageRange_3);
-    FLASH_Lock();
-}
-
-static void flightControllerStart()
-{
-    #define OF_FILTER_COEF_ALPHA  0.0002f
-    #define OF_FILTER_COEF_BETA   0.0002f
-
-    #define OF_FILTER_COEF_GAMMA  0.00000002f
-    #define OF_FILTER_COEF_THETA  0.0002f
-    orientationFilterInitialize(&orientationFilterCtx, 1.0f / (float) SENSOR_SYSTEM_UPDATE_RATE, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_GAMMA, OF_FILTER_COEF_THETA);
-    flightControllerInit(SENSOR_SYSTEM_UPDATE_RATE);
-
-    spiHalImuReadOutStart();
-}
 #define M_PI_F  3.1415926535897932384626433832795f
 static float currentPitch, currentRoll, currentYaw;
 
@@ -420,9 +444,6 @@ static void eulerFromQuaternion(Quaternion *quaternion)
   currentPitch = asinf(gx) * 180.0f / M_PI_F;
   currentRoll = atan2f(gy, gz) * 180.0f / M_PI_F;
 }
-
-
-float magnetometerBias[3], magnetometerSensitivity[3];
 
 static OrientationFilterCtx orientationFilterCtx;
 static OfVector3 accMeasurements, gyroMeasurements, magMeasurements;
@@ -485,11 +506,64 @@ static void onImuFrameReady(void)
     isImuFrameReady = true;
 }
 
+void meansensors();
+
+int buffersize = 1000;     //Amount of readings used to average, make it higher to get more precision but sketch will be slower  (default:1000)
+int acel_deadzone = 8;     //Acelerometer error allowed, make it lower to get more precision, but sketch may not converge  (default:8)
+int giro_deadzone = 1;     //Giro error allowed, make it lower to get more precision, but sketch may not converge  (default:1)
+
+int16_t ax, ay, az,gx, gy, gz;
+
+int mean_ax,mean_ay,mean_az,mean_gx,mean_gy,mean_gz,state=0;
+int ax_offset,ay_offset,az_offset,gx_offset,gy_offset,gz_offset;
+
+void getMotion6(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz)
+{
+    uint8_t mpuData[14], temp;
+    i2cReadBuf(MPU_6050_ADDRESS, 0x3B, mpuData, sizeof(mpuData));
+    temp = mpuData[0];
+    mpuData[0] = mpuData[1];
+    mpuData[1] = temp;
+    temp = mpuData[2];
+    mpuData[2] = mpuData[3];
+    mpuData[3] = temp;
+    temp = mpuData[4];
+    mpuData[4] = mpuData[5];
+    mpuData[5] = temp;
+
+    temp = mpuData[8];
+    mpuData[7] = temp;
+    mpuData[6] = mpuData[9];
+    temp = mpuData[10];
+    mpuData[9] = temp;
+    mpuData[8] = mpuData[11];
+    temp = mpuData[12];
+    mpuData[11] = temp;
+    mpuData[10] = mpuData[13];
+
+    *ax = *((uint16_t *) &mpuData[0]);
+    *ay = *((uint16_t *) &mpuData[2]);
+    *az = *((uint16_t *) &mpuData[4]);
+
+    *gx = *((uint16_t *) &mpuData[6]);
+    *gy = *((uint16_t *) &mpuData[8]);
+    *gz = *((uint16_t *) &mpuData[10]);
+}
+
 #endif
 
-void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb)
+void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb, uint32_t updateRate)
 {
-    halI2cImuInit();
+    sensorSystemUpdateCallback = sensorSystemUpdateCb;
+    halI2cInit(onI2cDmaReadyEvent, onIntEvent);
+    setupMpu6050(1, 2, 3, 1);
+    setupCalibration(3, 1, 2, 1);
+
+    #define OF_FILTER_COEF_ALPHA  0.0002f
+    #define OF_FILTER_COEF_BETA   0.0002f
+    #define OF_FILTER_COEF_GAMMA  0.00000002f
+    #define OF_FILTER_COEF_THETA  0.0002f
+    orientationFilterInitialize(&orientationFilterCtx, 1.0f / (float) SENSOR_SYSTEM_UPDATE_RATE, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_GAMMA, OF_FILTER_COEF_THETA);
 }
 
 void sensorSystemCalibrate(void)
