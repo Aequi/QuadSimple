@@ -56,10 +56,10 @@ void onSensorSystemUpdate(void)
 int main(void)
 {
     halCommonInit();
+    sensorSystemInit(onSensorSystemUpdate);
     delayInit(delayTimerEventHandler);
     batteryMonitorInit();
     protocolInit(false);
-    sensorSystemInit(onSensorSystemUpdate);
     sensorSystemCalibrate();
     delayMs(SENSOR_STARTUP_TIMEOUT);
     sensorSystemGetCurrentOrientation(&orientationEstimate);

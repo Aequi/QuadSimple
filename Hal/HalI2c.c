@@ -19,7 +19,7 @@
 
 #define I2C_PERIPH_OWN_ADDRESS                          1u
 
-#define I2C_PERIPH_IMU_ADDRESS                          0x78
+#define I2C_PERIPH_IMU_ADDRESS                          0x68
 
 static void i2cInit(void)
 {
@@ -85,10 +85,35 @@ static void i2cWrite(uint8_t chipAddress, uint8_t registerAddress, uint8_t data)
     I2C_ClearFlag(I2C_PERIPH_HWUNIT, I2C_FLAG_STOPF);
 }
 
+static uint8_t i2cRead(uint8_t chipAddress, uint8_t registerAddress)
+{
+    while (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_BUSY));
+
+    I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, 2, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+    while(I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_ISR_TXIS) == RESET);
+
+	I2C_SendData(I2C_PERIPH_HWUNIT, registerAddress);
+    while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_TXE));
+
+    I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, 2, I2C_SoftEnd_Mode, I2C_Generate_Start_Read);
+    while(I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_ISR_TXIS) == RESET);
+
+	uint8_t data = I2C_ReceiveData(I2C_PERIPH_HWUNIT);
+    while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_RXNE));
+
+    I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, 0, I2C_AutoEnd_Mode,  I2C_Generate_Stop);
+    while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_STOPF));
+    I2C_ClearFlag(I2C_PERIPH_HWUNIT, I2C_FLAG_STOPF);
+
+    return data;
+}
+
+
 void halI2cImuInit(void)
 {
     i2cInit();
-
+    uint8_t id = i2cRead(I2C_PERIPH_IMU_ADDRESS, 0x75);
+    id = i2cRead(I2C_PERIPH_IMU_ADDRESS, 0x75);
 }
 
 void EXTI0_1_IRQHandler(void)

@@ -489,7 +489,7 @@ static void onImuFrameReady(void)
 
 void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb)
 {
-
+    halI2cImuInit();
 }
 
 void sensorSystemCalibrate(void)
