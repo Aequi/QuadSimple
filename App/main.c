@@ -14,14 +14,21 @@
 #define TIMER_EVENT_PERIOD          100
 #define RC_ALIVE_TIMEOUT            1000
 #define SENSOR_STARTUP_TIMEOUT      1000
+#define LOW_BAT_TIMEOUT             2000
+#define LOW_BAT_THRESHOLD           10
 
 static bool isTimerEvent = false;
 static uint32_t rcAliveTimer = 0;
+static uint32_t lowBatCounter = 0;
 
 void delayTimerEventHandler(void)
 {
     if (rcAliveTimer++ >= RC_ALIVE_TIMEOUT) {
         rcAliveTimer = RC_ALIVE_TIMEOUT;
+    }
+
+    if (lowBatCounter++ >= LOW_BAT_TIMEOUT) {
+        lowBatCounter = LOW_BAT_TIMEOUT;
     }
 
     static uint32_t counter = 0;
@@ -40,7 +47,7 @@ void onSensorSystemUpdate(void)
 {
     sensorSystemGetCurrentOrientation(&orientationEstimate);
 
-    if (rcAliveTimer >= RC_ALIVE_TIMEOUT) {
+    if (rcAliveTimer >= RC_ALIVE_TIMEOUT || lowBatCounter >= LOW_BAT_TIMEOUT) {
         rcProcessorGetIdleSetPoint(&setPoint, &orientationEstimate);
     } else {
         rcProcessorGetSetPoint(&setPoint, &joysticksStatePacket, &orientationEstimate);
@@ -56,16 +63,16 @@ void onSensorSystemUpdate(void)
 int main(void)
 {
     halCommonInit();
-    sensorSystemInit(onSensorSystemUpdate);
+    sensorSystemInit(onSensorSystemUpdate, SENSOR_SYSTEM_UPDATE_RATE);
+    sensorSystemCalibrate(false);
     delayInit(delayTimerEventHandler);
     batteryMonitorInit();
     protocolInit(false);
-    sensorSystemCalibrate();
     delayMs(SENSOR_STARTUP_TIMEOUT);
     sensorSystemGetCurrentOrientation(&orientationEstimate);
     flightControllerInit(SENSOR_SYSTEM_UPDATE_RATE, PWM_MAX);
     rcProcessorInit(&orientationEstimate, PWM_MAX);
-    sensorSystemStartUpdateEvent();
+    sensorSystemStartUpdateEvent(true);
 
     for (;;) {
         protocolProcess();
@@ -78,6 +85,9 @@ int main(void)
             batteryMonitorProcess();
             uint8_t soc = batteryMonitorGetSoc();
             protocolSendBatterySoc(soc);
+            if (soc > LOW_BAT_THRESHOLD) {
+                lowBatCounter = 0;
+            }
             isTimerEvent = false;
         }
     }

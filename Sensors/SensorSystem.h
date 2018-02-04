@@ -10,9 +10,9 @@
 
 typedef void (*SensorSystemUpdateCallback)(void);
 
-void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb);
-void sensorSystemCalibrate(void);
-void sensorSystemGetCurrentOrientation(FlightControllerOrientationEstimate *orientationEstimate);
-void sensorSystemStartUpdateEvent(void);
+void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb, uint32_t updateRate);
+void sensorSystemCalibrate(bool isBiasUpdateNeeded);
+void sensorSystemGetCurrentOrientation(FlightControllerOrientationEstimate *flightControllerOrientationEstimate);
+void sensorSystemStartUpdateEvent(bool isUpdateEnabled);
 
 #endif

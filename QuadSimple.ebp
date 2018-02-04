@@ -119,6 +119,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Filters\Lpf\Lpf.h" />
+		<Unit filename="Filters\OrientationFilter\OrientationFilter.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Filters\OrientationFilter\OrientationFilter.h" />
 		<Unit filename="FlightController\FlightController.c">
 			<Option compilerVar="CC" />
 		</Unit>
