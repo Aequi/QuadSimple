@@ -275,7 +275,7 @@ static void setupImu(uint8_t sampleRateDiv, uint8_t dlpf, uint8_t gyroFsel, uint
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_CONFIG, dlpf);
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_GYRO_CONFIG, gyroFsel << 3);
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_ACCEL_CONFIG, accFsel << 3);
-
+    halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_INT_ENABLE, 0x00);
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_INT_PIN_CFG, 0x10);
 }
 

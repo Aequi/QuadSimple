@@ -64,7 +64,7 @@ int main(void)
 {
     halCommonInit();
     sensorSystemInit(onSensorSystemUpdate, SENSOR_SYSTEM_UPDATE_RATE);
-    sensorSystemCalibrate(false);
+    sensorSystemCalibrate(true);
     delayInit(delayTimerEventHandler);
     batteryMonitorInit();
     protocolInit(false);

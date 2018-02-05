@@ -30,6 +30,7 @@ static uint32_t bytesToRead;
 
 void EXTI0_1_IRQHandler(void)
 {
+    EXTI_ClearITPendingBit(EXTI_Line1);
     if (halIntPinEventCallback != NULL) {
         halIntPinEventCallback();
     }
