@@ -63,11 +63,11 @@ void onSensorSystemUpdate(void)
 int main(void)
 {
     halCommonInit();
-    sensorSystemInit(onSensorSystemUpdate, SENSOR_SYSTEM_UPDATE_RATE);
-    sensorSystemCalibrate(true);
     delayInit(delayTimerEventHandler);
     batteryMonitorInit();
     protocolInit(false);
+    sensorSystemInit(onSensorSystemUpdate, SENSOR_SYSTEM_UPDATE_RATE);
+    sensorSystemCalibrate(false);
     delayMs(SENSOR_STARTUP_TIMEOUT);
     sensorSystemGetCurrentOrientation(&orientationEstimate);
     flightControllerInit(SENSOR_SYSTEM_UPDATE_RATE, PWM_MAX);

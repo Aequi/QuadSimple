@@ -36,23 +36,36 @@ void EXTI0_1_IRQHandler(void)
     }
 }
 
+static enum {
+    I2C_STATE_STOP,
+    I2C_STATE_TX_START,
+    I2C_STATE_TX,
+    I2C_STATE_RX,
+} i2cState = I2C_STATE_STOP;
+
+
 void I2C1_IRQHandler(void)
 {
-    if (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_IT_TXIS)) {
-        I2C_ClearITPendingBit(I2C_PERIPH_HWUNIT, I2C_IT_TXIS);
+            static volatile uint32_t cntr = 0;
+    switch (i2cState) {
+    case I2C_STATE_TX_START :
+        if (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_IT_TXIS)) {
+            I2C_ClearITPendingBit(I2C_PERIPH_HWUNIT, I2C_IT_TXIS);
+        }
         I2C_ITConfig(I2C_PERIPH_HWUNIT, I2C_ISR_TXIS, DISABLE);
         I2C_SendData(I2C_PERIPH_HWUNIT, halI2cRegAddress);
-        I2C_ITConfig(I2C_PERIPH_HWUNIT, I2C_IT_TXI, ENABLE);
-    }
+        I2C_ITConfig(I2C_PERIPH_HWUNIT, I2C_IT_TC, ENABLE);
+        i2cState = I2C_STATE_TX;
+        break;
 
-    if (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_TXE)) {
-        I2C_ClearITPendingBit(I2C_PERIPH_HWUNIT, I2C_IT_TXI);
-        I2C_ITConfig(I2C_PERIPH_HWUNIT, I2C_ISR_TXE, DISABLE);
-        I2C_TransferHandling(I2C_PERIPH_HWUNIT, halI2cChipAddress, bytesToRead, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
+    case I2C_STATE_TX :
+        if (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_TCR)) {
+            I2C_ClearITPendingBit(I2C_PERIPH_HWUNIT, I2C_IT_TC);
+        }
+        I2C_ITConfig(I2C_PERIPH_HWUNIT, I2C_IT_TC, DISABLE);
         I2C_ITConfig(I2C_PERIPH_HWUNIT, I2C_ISR_STOPF, ENABLE);
         I2C_DMACmd(I2C_PERIPH_HWUNIT, I2C_DMAReq_Rx, ENABLE);
         DMA_InitTypeDef dmaInitStructure;
-
         dmaInitStructure.DMA_BufferSize = bytesToRead;
         dmaInitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
         dmaInitStructure.DMA_M2M = DMA_M2M_Disable;
@@ -67,19 +80,31 @@ void I2C1_IRQHandler(void)
         DMA_Init(DMA1_Channel3, &dmaInitStructure);
         DMA_ITConfig(DMA1_Channel3, DMA_IT_TC, ENABLE);
         DMA_Cmd(DMA1_Channel3, ENABLE);
-    }
+        I2C_TransferHandling(I2C_PERIPH_HWUNIT, halI2cChipAddress, bytesToRead, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
+        i2cState = I2C_STATE_RX;
+        break;
 
-    if (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_IT_STOPF)) {
+    case I2C_STATE_RX :
+        if (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_IT_STOPF)) {
+            I2C_ClearITPendingBit(I2C_PERIPH_HWUNIT, I2C_FLAG_STOPF);
+        }
         I2C_DMACmd(I2C_PERIPH_HWUNIT, I2C_DMAReq_Rx, DISABLE);
         DMA_ITConfig(DMA1_Channel3, DMA_IT_TC, DISABLE);
         DMA_Cmd(DMA1_Channel3, DISABLE);
+        i2cState = I2C_STATE_STOP;
+        break;
+
+    default :
+        break;
     }
 }
 
 void i2cRxDmaCb(bool isHalf)
 {
-    if (halI2cDmaReadCallback != NULL) {
-        halI2cDmaReadCallback();
+    if (!isHalf) {
+        if (halI2cDmaReadCallback != NULL) {
+            halI2cDmaReadCallback();
+        }
     }
 }
 
@@ -159,10 +184,8 @@ uint8_t halI2cRead(uint8_t chipAddress, uint8_t registerAddress)
     while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_TXE));
 
     I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Read);
-    while(I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_ISR_TXIS) == RESET);
-
-	uint8_t data = I2C_ReceiveData(I2C_PERIPH_HWUNIT);
     while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_RXNE));
+	uint8_t data = I2C_ReceiveData(I2C_PERIPH_HWUNIT);
 
     I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, 0, I2C_AutoEnd_Mode,  I2C_Generate_Stop);
     while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_STOPF));
@@ -182,11 +205,10 @@ void halI2cReadBuf(uint8_t chipAddress, uint8_t registerAddress, uint8_t data[],
     while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_TXE));
 
     I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, dataLength, I2C_SoftEnd_Mode, I2C_Generate_Start_Read);
-    while(I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_ISR_TXIS) == RESET);
 
     while (dataLength-- > 0) {
-        *data++ = I2C_ReceiveData(I2C_PERIPH_HWUNIT);
         while(!I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_FLAG_RXNE));
+        *data++ = I2C_ReceiveData(I2C_PERIPH_HWUNIT);
     }
 
     I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, 0, I2C_AutoEnd_Mode,  I2C_Generate_Stop);
@@ -203,11 +225,15 @@ void halI2cInit(HalI2cDmaReadCallback halI2cDmaReadCb, HalIntPinEventCallback ha
 
 void halI2cReadWithDma(uint8_t chipAddress, uint8_t startRegisterAddress, uint32_t length)
 {
-    bytesToRead = length;
-    halI2cRegAddress = startRegisterAddress;
-    halI2cChipAddress = chipAddress;
-    I2C_ITConfig(I2C_PERIPH_HWUNIT, I2C_ISR_TXIS, ENABLE);
-    I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+    if (i2cState == I2C_STATE_STOP) {
+        bytesToRead = length;
+        halI2cRegAddress = startRegisterAddress;
+        halI2cChipAddress = chipAddress;
+        i2cState = I2C_STATE_TX_START;
+        NVIC_EnableIRQ(I2C1_IRQn);
+        I2C_ITConfig(I2C_PERIPH_HWUNIT, I2C_ISR_TXIS, ENABLE);
+        I2C_TransferHandling(I2C_PERIPH_HWUNIT, chipAddress, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+    }
 }
 
 uint8_t *halI2cGetReadBuffer(uint32_t *bufferSize)

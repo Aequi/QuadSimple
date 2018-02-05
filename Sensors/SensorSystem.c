@@ -237,7 +237,6 @@ static void onIntEvent(void)
 
 static void onI2cDmaReadyEvent(void)
 {
-    static OrientationFilterCtx orientationFilterCtx;
     static OfVector3 accMeasurements, gyroMeasurements;
     static int16_t imuData[6];
     uint32_t imuDatalength;
@@ -249,9 +248,9 @@ static void onI2cDmaReadyEvent(void)
     accMeasurements.x = (float) imuData[0] * 8.0f / 32767.0f;
     accMeasurements.y = (float) imuData[1] * 8.0f / 32767.0f;
     accMeasurements.z = (float) imuData[2] * 8.0f / 32767.0f;
-    gyroMeasurements.x = (float) imuData[4] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
-    gyroMeasurements.y = (float) imuData[5] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
-    gyroMeasurements.z = (float) imuData[6] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
+    gyroMeasurements.x = (float) imuData[3] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
+    gyroMeasurements.y = (float) imuData[4] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
+    gyroMeasurements.z = (float) imuData[5] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
 
     orientationFilterUpdateImu(&orientationFilterCtx, &accMeasurements, &gyroMeasurements, false);
 
@@ -350,7 +349,7 @@ static void calibrationProcess(int32_t *gxOffset, int32_t *gyOffset, int32_t *gz
 
     *axOffset = -(meanAx >> 3);
     *ayOffset = -(meanAy >> 3);
-    *azOffset = (8192 - meanAz) >> 3;
+    *azOffset = (4096 - meanAz) >> 3;
 
     for (;;) {
         setXGyroOffset(*gxOffset);
@@ -384,19 +383,19 @@ static void calibrationProcess(int32_t *gxOffset, int32_t *gyOffset, int32_t *gz
         if (absI(meanAx) <= 1) {
             isXgReady = true;
         } else {
-            axOffset -= meanAx >> 1;
+            *axOffset -= meanAx >> 1;
         }
 
         if (absI(meanAy) <= 1) {
             isYgReady = true;
         } else {
-            ayOffset -= meanAy >> 1;
+            *ayOffset -= meanAy >> 1;
         }
 
-        if (absI(8192 - meanAz) <= 1) {
+        if (absI(4096 - meanAz) <= 1) {
             isZgReady = true;
         } else {
-            azOffset += (8192 - meanAz) >> 1;
+            *azOffset += (4096 - meanAz) >> 1;
         }
 
         if (isXaReady && isYaReady && isZaReady && isXgReady && isYgReady && isZgReady) {
@@ -426,8 +425,8 @@ void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb, uint32_t 
 
 void sensorSystemCalibrate(bool isBiasUpdateNeeded)
 {
-    int32_t gxOffset = 0, gyOffset = 0, gzOffset = 0;
-    int32_t axBias = 0, ayBias = 0, azBias = 0;
+    int32_t gxOffset = 17, gyOffset = 78, gzOffset = 29;
+    int32_t axBias = -4115, ayBias = -241, azBias = 862;
 
     if (isBiasUpdateNeeded) {
         calibrationProcess(&gxOffset, &gyOffset, &gzOffset, &axBias, &ayBias, &azBias);
