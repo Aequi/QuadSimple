@@ -46,7 +46,6 @@ static enum {
 
 void I2C1_IRQHandler(void)
 {
-            static volatile uint32_t cntr = 0;
     switch (i2cState) {
     case I2C_STATE_TX_START :
         if (I2C_GetFlagStatus(I2C_PERIPH_HWUNIT, I2C_IT_TXIS)) {
