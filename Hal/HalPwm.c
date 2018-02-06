@@ -24,77 +24,89 @@ void halPwmInit(void)
 
     GPIO_Init(HAL_PWM_PORT, &gpioInitStructure);
 
-    GPIO_PinAFConfig(HAL_PWM_PORT, HAL_PWM_CH0_PIN_SOURCE, GPIO_AF_2);
-    GPIO_PinAFConfig(HAL_PWM_PORT, HAL_PWM_CH1_PIN_SOURCE, GPIO_AF_2);
+    GPIO_PinAFConfig(HAL_PWM_PORT, HAL_PWM_CH0_PIN_SOURCE, GPIO_AF_1);
+    GPIO_PinAFConfig(HAL_PWM_PORT, HAL_PWM_CH1_PIN_SOURCE, GPIO_AF_1);
     GPIO_PinAFConfig(HAL_PWM_PORT, HAL_PWM_CH2_PIN_SOURCE, GPIO_AF_2);
     GPIO_PinAFConfig(HAL_PWM_PORT, HAL_PWM_CH3_PIN_SOURCE, GPIO_AF_2);
-
-    RCC_ClocksTypeDef rccClocks;
-
-    RCC_GetClocksFreq(&rccClocks);
 
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_TimeBaseStructure.TIM_Prescaler = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseStructure.TIM_Period = rccClocks.PCLK_Frequency / (PWM_MAX + 1) - 1;
+    TIM_TimeBaseStructure.TIM_Period = PWM_MAX;
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
 
     TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
     TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
+    TIM_ARRPreloadConfig(TIM2, ENABLE);
+    TIM_ARRPreloadConfig(TIM3, ENABLE);
 
     TIM_OCInitTypeDef TIM_OCInitStructure;
-    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
+    TIM_OCStructInit(&TIM_OCInitStructure);
+    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
-    TIM_OCInitStructure.TIM_Pulse = 0;
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-    TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_Low;
     TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Reset;
-    TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCIdleState_Set;
+    TIM_OCInitStructure.TIM_Pulse = 0;
 
     TIM_OC1Init(TIM2, &TIM_OCInitStructure);
+    TIM_OC1PreloadConfig(TIM2, TIM_OCPreload_Enable);
+    TIM_OC1FastConfig(TIM2, TIM_OCFast_Disable);
+
     TIM_OC2Init(TIM2, &TIM_OCInitStructure);
-    TIM_OC3Init(TIM3, &TIM_OCInitStructure);
-    TIM_OC4Init(TIM3, &TIM_OCInitStructure);
+    TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Enable);
+    TIM_OC2FastConfig(TIM2, TIM_OCFast_Disable);
+
+    TIM_OC1Init(TIM3, &TIM_OCInitStructure);
+    TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
+    TIM_OC1FastConfig(TIM3, TIM_OCFast_Disable);
+
+    TIM_OC2Init(TIM3, &TIM_OCInitStructure);
+    TIM_OC2PreloadConfig(TIM3, TIM_OCPreload_Enable);
+    TIM_OC2FastConfig(TIM3, TIM_OCFast_Disable);
 
     TIM_Cmd(TIM2, ENABLE);
     TIM_Cmd(TIM3, ENABLE);
+    halPwmEnable(PWM_CHANNEL_0, false);
+    halPwmEnable(PWM_CHANNEL_1, false);
+    halPwmEnable(PWM_CHANNEL_2, false);
+    halPwmEnable(PWM_CHANNEL_3, false);
+}
 
-    TIM_CtrlPWMOutputs(TIM2, DISABLE);
-    TIM_CtrlPWMOutputs(TIM3, DISABLE);
+static const struct timerChannels {
+    uint16_t channel;
+    TIM_TypeDef *timer;
+} timChannels[] = {
+    {TIM_Channel_2, TIM3},
+    {TIM_Channel_1, TIM3},
+    {TIM_Channel_2, TIM2},
+    {TIM_Channel_1, TIM2},
+};
+
+void halPwmEnable(PwmChannel pwmChannel, bool isEnabled)
+{
+    TIM_CCxCmd(timChannels[pwmChannel].timer, timChannels[pwmChannel].channel, isEnabled ? TIM_CCx_Enable : TIM_CCx_Disable);
 }
 
 void halPwmSetChannelValue(PwmChannel pwmChannel, uint32_t value)
 {
+    value /= 3;
     switch (pwmChannel) {
     case PWM_CHANNEL_0 :
-        TIM2->CCR1 = value;
+        TIM3->CCR2 = value;
         break;
 
     case PWM_CHANNEL_1 :
-        TIM2->CCR2 = value;
+        TIM3->CCR1 = value;
         break;
 
     case PWM_CHANNEL_2 :
-        TIM3->CCR3 = value;
+        TIM2->CCR2 = value;
         break;
 
     case PWM_CHANNEL_3 :
-        TIM3->CCR4 = value;
+        TIM2->CCR1 = value;
         break;
 
     }
-}
-
-void halPwmEnable(void)
-{
-    TIM_CtrlPWMOutputs(TIM2, ENABLE);
-    TIM_CtrlPWMOutputs(TIM3, ENABLE);
-}
-
-void halPwmDisable(void)
-{
-    TIM_CtrlPWMOutputs(TIM2, DISABLE);
-    TIM_CtrlPWMOutputs(TIM3, DISABLE);
 }

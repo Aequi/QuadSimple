@@ -120,7 +120,7 @@ void rcProcessorGetIdleSetPoint(FlightControllerSetPoint *setPoint, FlightContro
         throttle = 0;
     }
 
-    setPoint->pitch = throttle;
+    setPoint->throttle = throttle;
     setPoint->roll = roll = 0;
     setPoint->pitch = pitch = 0;
     setPoint->yaw = flightControllerOrientatonEstimate->currentYaw;

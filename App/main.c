@@ -65,6 +65,7 @@ int main(void)
     halCommonInit();
     delayInit(delayTimerEventHandler);
     batteryMonitorInit();
+    halPwmInit();
     protocolInit(false);
     sensorSystemInit(onSensorSystemUpdate, SENSOR_SYSTEM_UPDATE_RATE);
     sensorSystemCalibrate(false);
@@ -78,6 +79,17 @@ int main(void)
         protocolProcess();
         if (protocolIsPacketReady()) {
             joysticksStatePacket = protocolGetJoystickValues();
+            if (joysticksStatePacket.buttonCode == 2) {
+                 halPwmEnable(PWM_CHANNEL_0, true);
+                 halPwmEnable(PWM_CHANNEL_1, true);
+                 halPwmEnable(PWM_CHANNEL_2, true);
+                 halPwmEnable(PWM_CHANNEL_3, true);
+            } else if (joysticksStatePacket.buttonCode == 1) {
+                 halPwmEnable(PWM_CHANNEL_0, false);
+                 halPwmEnable(PWM_CHANNEL_1, false);
+                 halPwmEnable(PWM_CHANNEL_2, false);
+                 halPwmEnable(PWM_CHANNEL_3, false);
+            }
             rcAliveTimer = 0;
         }
 
