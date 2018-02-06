@@ -61,50 +61,43 @@
 #define DEG_180                     180.0f
 #define M_PI_F                      3.1415926535897932384626433832795f
 
+#define IMU_SAMPLING_FREQUENCY_MAX  1000
+#define IMU_MAX_OUTPUT_VALUE        32767.0f
+#define IMU_DESIRED_G_ACC_VALUE     4096
+
+const enum ImuAccRange {
+    IMU_ACC_SENSITIVITY_2G,
+    IMU_ACC_SENSITIVITY_4G,
+    IMU_ACC_SENSITIVITY_8G,
+    IMU_ACC_SENSITIVITY_16G,
+    IMU_ACC_SENSITIVITY_COUNT,
+} imuAccRange = IMU_ACC_SENSITIVITY_8G;
+
+const enum ImuGyroRange {
+    IMU_GYRO_SENSITIVITY_250DEG,
+    IMU_GYRO_SENSITIVITY_500DEG,
+    IMU_GYRO_SENSITIVITY_1000DEG,
+    IMU_GYRO_SENSITIVITY_2000DEG,
+    IMU_GURO_SENSITIVITY_COUNT,
+} imuGyroRange = IMU_GYRO_SENSITIVITY_2000DEG;
+
+const enum ImuDlpf {
+    IMU_DLPF_260_250_HZ,
+    IMU_DLPF_184_188_HZ,
+    IMU_DLPF_94_98_HZ,
+    IMU_DLPF_44_42_HZ,
+    IMU_DLPF_21_20_HZ,
+    IMU_DLPF_10_10_HZ,
+    IMU_DLPF_5_5_HZ,
+} imuDlpf = IMU_DLPF_94_98_HZ;
+
 static SensorSystemUpdateCallback sensorSystemUpdateCallback;
 static OrientationFilterCtx orientationFilterCtx;
 static FlightControllerOrientationEstimate orientationEstimate;
 static bool isUpdateEventEnabled = false;
 
-/*
-static int8_t getXFineGain(void)
-{
-    return halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_X_FINE_GAIN);
-}
-
-static void setXFineGain(int8_t gain)
-{
-    halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_X_FINE_GAIN, gain);
-}
-
-static int8_t getYFineGain(void)
-{
-    return halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_Y_FINE_GAIN);
-}
-
-static void setYFineGain(int8_t gain)
-{
-    halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_Y_FINE_GAIN, gain);
-}
-
-static int8_t getZFineGain(void)
-{
-    return halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_Z_FINE_GAIN);
-}
-
-static void setZFineGain(int8_t gain)
-{
-    halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_Z_FINE_GAIN, gain);
-}
-
-static int16_t getXAccelOffset(void)
-{
-    uint8_t buffer[2];
-    buffer[0] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_XA_OFFS_H);
-    buffer[1] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_XA_OFFS_H + 1);
-    return (((int16_t) buffer[0]) << 8) | buffer[1];
-}
-*/
+static const float imuAccRangeValues[IMU_ACC_SENSITIVITY_COUNT] = {2.0f, 4.0f, 8.0f, 16.0f};
+static const float imuGyroRangeValues[IMU_GURO_SENSITIVITY_COUNT] = {250.0f, 500.0f, 1000.0, 2000.0f};
 
 static void setXAccelOffset(int16_t offset)
 {
@@ -112,31 +105,11 @@ static void setXAccelOffset(int16_t offset)
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_XA_OFFS_H + 1, offset);
 }
 
-/*
-static int16_t getYAccelOffset(void)
-{
-    uint8_t buffer[2];
-    buffer[0] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_YA_OFFS_H);
-    buffer[1] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_YA_OFFS_H + 1);
-    return (((int16_t)buffer[0]) << 8) | buffer[1];
-}
-*/
-
 static void setYAccelOffset(int16_t offset)
 {
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_YA_OFFS_H, offset >> 8);
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_YA_OFFS_H + 1, offset);
 }
-
-/*
-static int16_t getZAccelOffset(void)
-{
-    uint8_t buffer[2];
-    buffer[0] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_ZA_OFFS_H);
-    buffer[1] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_ZA_OFFS_H + 1);
-    return (((int16_t)buffer[0]) << 8) | buffer[1];
-}
-*/
 
 static void setZAccelOffset(int16_t offset)
 {
@@ -144,47 +117,17 @@ static void setZAccelOffset(int16_t offset)
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_ZA_OFFS_H + 1, offset);
 }
 
-/*
-static int16_t getXGyroOffset(void)
-{
-    uint8_t buffer[2];
-    buffer[0] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_XG_OFFS_USRH);
-    buffer[1] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_XG_OFFS_USRH + 1);
-    return (((int16_t)buffer[0]) << 8) | buffer[1];
-}
-*/
-
 static void setXGyroOffset(int16_t offset)
 {
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_XG_OFFS_USRH, offset >> 8);
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_XG_OFFS_USRH + 1, offset);
 }
 
-/*
-static int16_t getYGyroOffset()
-{
-    uint8_t buffer[2];
-    buffer[0] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_YG_OFFS_USRH);
-    buffer[1] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_YG_OFFS_USRH + 1);
-    return (((int16_t)buffer[0]) << 8) | buffer[1];
-}
-*/
-
 static void setYGyroOffset(int16_t offset)
 {
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_YG_OFFS_USRH, offset >> 8);
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_YG_OFFS_USRH + 1, offset);
 }
-
-/*
-static int16_t getZGyroOffset()
-{
-    uint8_t buffer[2];
-    buffer[0] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_ZG_OFFS_USRH);
-    buffer[1] = halI2cRead(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_ZG_OFFS_USRH + 1);
-    return (((int16_t)buffer[0]) << 8) | buffer[1];
-}
-*/
 
 static void setZGyroOffset(int16_t offset)
 {
@@ -245,12 +188,12 @@ static void onI2cDmaReadyEvent(void)
 
     unpackImuFrame(data, (uint16_t *) imuData);
 
-    accMeasurements.x = (float) imuData[0] * 8.0f / 32767.0f;
-    accMeasurements.y = (float) imuData[1] * 8.0f / 32767.0f;
-    accMeasurements.z = (float) imuData[2] * 8.0f / 32767.0f;
-    gyroMeasurements.x = (float) imuData[3] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
-    gyroMeasurements.y = (float) imuData[4] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
-    gyroMeasurements.z = (float) imuData[5] * 2000.0f * M_PI_F / 32767.0f / 180.0f;
+    accMeasurements.x = (float) imuData[0] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE;
+    accMeasurements.y = (float) imuData[1] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE;
+    accMeasurements.z = (float) imuData[2] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE;
+    gyroMeasurements.x = (float) imuData[3] * imuGyroRangeValues[imuGyroRange] * M_PI_F / IMU_MAX_OUTPUT_VALUE / DEG_180;
+    gyroMeasurements.y = (float) imuData[4] * imuGyroRangeValues[imuGyroRange] * M_PI_F / IMU_MAX_OUTPUT_VALUE / DEG_180;
+    gyroMeasurements.z = (float) imuData[5] * imuGyroRangeValues[imuGyroRange] * M_PI_F / IMU_MAX_OUTPUT_VALUE / DEG_180;
 
     orientationFilterUpdateImu(&orientationFilterCtx, &accMeasurements, &gyroMeasurements, false);
 
@@ -266,7 +209,7 @@ static void onI2cDmaReadyEvent(void)
     }
 }
 
-static void setupImu(uint8_t sampleRateDiv, uint8_t dlpf, uint8_t gyroFsel, uint8_t accFsel)
+static void setupImu(uint8_t sampleRateDiv, enum ImuDlpf dlpf, enum ImuGyroRange gyroFsel, enum ImuAccRange accFsel)
 {
     halI2cWrite(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_PWR_MGMT_1, 0x01);
 
@@ -349,7 +292,7 @@ static void calibrationProcess(int32_t *gxOffset, int32_t *gyOffset, int32_t *gz
 
     *axOffset = -(meanAx >> 3);
     *ayOffset = -(meanAy >> 3);
-    *azOffset = (4096 - meanAz) >> 3;
+    *azOffset = (IMU_DESIRED_G_ACC_VALUE - meanAz) >> 3;
 
     for (;;) {
         setXGyroOffset(*gxOffset);
@@ -392,10 +335,10 @@ static void calibrationProcess(int32_t *gxOffset, int32_t *gyOffset, int32_t *gz
             *ayOffset -= meanAy >> 1;
         }
 
-        if (absI(4096 - meanAz) <= 1) {
+        if (absI(IMU_DESIRED_G_ACC_VALUE - meanAz) <= 1) {
             isZgReady = true;
         } else {
-            *azOffset += (4096 - meanAz) >> 1;
+            *azOffset += (IMU_DESIRED_G_ACC_VALUE - meanAz) >> 1;
         }
 
         if (isXaReady && isYaReady && isZaReady && isXgReady && isYgReady && isZgReady) {
@@ -408,7 +351,7 @@ void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb, uint32_t 
 {
     sensorSystemUpdateCallback = sensorSystemUpdateCb;
     halI2cInit(onI2cDmaReadyEvent, onIntEvent);
-    setupImu(3, 2, 3, 2);
+    setupImu(IMU_SAMPLING_FREQUENCY_MAX / SENSOR_SYSTEM_UPDATE_RATE - 1, imuDlpf, imuGyroRange, imuAccRange);
 
     #define OF_FILTER_COEF_ALPHA  0.0002f
     #define OF_FILTER_COEF_BETA   0.0002f
