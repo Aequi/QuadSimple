@@ -65,11 +65,11 @@ void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystick
     }
 
     if (yaw > DEG180) {
-        yaw -= DEG180 * 2;
+        yaw -= DEG180 * 2.0;
     }
 
     if (yaw < -DEG180) {
-        yaw += DEG180 * 2;
+        yaw += DEG180 * 2.0;
     }
 
     float throttleIncrement = (float) CLAMP_JOY(j1y) * MAX_QUAD_POWER_RATE / (float) MAX_JOY_VALUE;
@@ -79,7 +79,7 @@ void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystick
     }
 
     if (throttleIncrement < 0) {
-        throttleIncrement *= 2;
+        throttleIncrement *= 2.0;
     }
 
     throttle += throttleIncrement;

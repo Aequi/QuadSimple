@@ -1,5 +1,5 @@
-#ifndef FILTER_H_
-#define FILTER_H_
+#ifndef __FILTER_H__
+#define __FILTER_H__
 #include <stdint.h>
 
 typedef struct lpfTwoPoleIirContext {
@@ -14,12 +14,13 @@ typedef struct lpfTwoPoleIirContext {
     float b2;
 } lpfTwoPoleIirContext;
 
-int32_t lpfSinglePoleIirDecayFromFc(int32_t cutOffFrequency, int32_t samplingFrequency);
+int32_t fltSinglePoleIirDecayFromFc(int32_t cutOffFrequency, int32_t samplingFrequency);
 int16_t lpfSinglePoleIirApply(int32_t *filterContext, int32_t inputValue, int32_t decayValue);
+float hpfSinglePoleIirApply(float *filterContext, float inputValue, float decayValue);
 
 void lpfTwoPoleIirInit(lpfTwoPoleIirContext *lpfTwoPoleIirContext, float cutOffFrequency, float samplingFrequency);
 float lpfTwoPoleIirReset(lpfTwoPoleIirContext *lpfTwoPoleIirContext, float inputValue);
 float lpfTwoPoleIirApply(lpfTwoPoleIirContext *lpfTwoPoleIirContext, float inputValue);
 
 
-#endif //FILTER_H_
+#endif //__FILTER_H__

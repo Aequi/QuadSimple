@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "Lpf.h"
+#include "iir.h"
 
 #define B_256_SCALER    8
 #define B_128_SCALER    7
@@ -70,7 +70,7 @@ float lpfTwoPoleIirApply(lpfTwoPoleIirContext *lpfTwoPoleIirContext, float input
 }
 
 // d = e ^ (-2 * π * fc)
-int32_t lpfSinglePoleIirDecayFromFc(int32_t cutOffFrequency, int32_t samplingFrequency)
+int32_t fltSinglePoleIirDecayFromFc(int32_t cutOffFrequency, int32_t samplingFrequency)
 {
     float f0ToFs = (float) cutOffFrequency / (float) samplingFrequency;
     float d = powf(E_F, -2.0f * PI_F * f0ToFs);
@@ -82,7 +82,25 @@ int32_t lpfSinglePoleIirDecayFromFc(int32_t cutOffFrequency, int32_t samplingFre
 // d - decay, x -  input, y - output
 int16_t lpfSinglePoleIirApply(int32_t *filterContext, int32_t inputValue, int32_t decayValue)
 {
+    if (filterContext == NULL) {
+        return 0;
+    }
+
     inputValue <<= B_256_SCALER;
     *filterContext += ((inputValue - *filterContext) >> B_256_SCALER) * ((1 << (B_256_SCALER)) - decayValue);
     return (*filterContext >> B_256_SCALER) + ((*filterContext & (1 << B_128_SCALER)) >> (B_128_SCALER));
+}
+
+float hpfSinglePoleIirApply(float *filterContext, float inputValue, float decayValue)
+{
+    if (filterContext == NULL) {
+        return 0.0;
+    }
+
+    float f = inputValue + decayValue * (*filterContext), y = 0;
+
+    y = f - (*filterContext);
+    *filterContext = f;
+
+    return y;
 }
