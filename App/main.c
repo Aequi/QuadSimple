@@ -66,7 +66,7 @@ int main(void)
     delayInit(delayTimerEventHandler);
     batteryMonitorInit();
     halPwmInit();
-    protocolInit(false);
+    protocolInit(true);
     sensorSystemInit(onSensorSystemUpdate, SENSOR_SYSTEM_UPDATE_RATE);
     sensorSystemCalibrate(false);
     delayMs(SENSOR_STARTUP_TIMEOUT);

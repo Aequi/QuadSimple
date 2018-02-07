@@ -7,14 +7,14 @@
 #define MAX_THROTTLE            maxOutputValueStatic
 #define CLAMP_JOY(x)            (((x) < -MAX_JOY_VALUE) ? -MAX_JOY_VALUE : (((x) > MAX_JOY_VALUE) ? MAX_JOY_VALUE : (x)))
 #define MAX_QUAD_ANGLE          20.0f
-#define MAX_QUAD_RATE           0.5f
-#define MAX_QUAD_POWER_RATE     0.1f
+#define MAX_QUAD_RATE           1.0f
+#define MAX_QUAD_POWER_RATE     1.0f
 #define JOY_EPS                 0.001f
 #define MAX_YAW_ERROR           5.0f
-#define J1_CAL                  2104
-#define J2_CAL                  2073
-#define J3_CAL                  2025
-#define J4_CAL                  2008
+#define J1_CAL                  1972
+#define J2_CAL                  2098
+#define J3_CAL                  2028
+#define J4_CAL                  2029
 #define SIN_45                  0.70710678118654752440084436210485f
 #define M_PI_F                  3.14159265358979323846264338327950f
 
@@ -44,12 +44,12 @@ void rcProcessorInit(FlightControllerOrientationEstimate *flightControllerOrient
 
 void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystickPacket *joystickPacket, FlightControllerOrientationEstimate *flightControllerOrientatonEstimate)
 {
-    int32_t j1x = J1_CAL - (joystickPacket->leftX & JOY_VALUE_MASK);
-    int32_t j1y = J2_CAL - (joystickPacket->leftY & JOY_VALUE_MASK);
-    int32_t j2x = J3_CAL - (joystickPacket->rightX & JOY_VALUE_MASK);
-    int32_t j2y = J4_CAL - (joystickPacket->rightY & JOY_VALUE_MASK);
+    int32_t j1x = (joystickPacket->leftX & JOY_VALUE_MASK) - J1_CAL;
+    int32_t j1y = (joystickPacket->leftY & JOY_VALUE_MASK) - J2_CAL;
+    int32_t j2x = (joystickPacket->rightX & JOY_VALUE_MASK) - J3_CAL;
+    int32_t j2y = (joystickPacket->rightY & JOY_VALUE_MASK) - J4_CAL;
 
-    roll = (float) CLAMP_JOY(j2x) * MAX_QUAD_ANGLE / (float) MAX_JOY_VALUE;
+    roll = -(float) CLAMP_JOY(j2x) * MAX_QUAD_ANGLE / (float) MAX_JOY_VALUE;
     pitch = - (float) CLAMP_JOY(j2y) * MAX_QUAD_ANGLE / (float) MAX_JOY_VALUE;
 
     getRotatedSetPoint(roll, pitch, &roll, &pitch);
