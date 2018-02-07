@@ -97,7 +97,7 @@ void protocolInit(bool isParameterSetNeeded)
         uartRfDmaTx((uint8_t *) "AT+B115200", sizeof("AT+B115200") - 1, rfTxReady);
         while (!isRfTxReady);
         isRfTxReady = false;
-        uartRfDmaTx((uint8_t *) "AT+P7", sizeof("AT+P7") - 1, rfTxReady);
+        uartRfDmaTx((uint8_t *) "AT+P5", sizeof("AT+P5") - 1, rfTxReady);
         while (!isRfTxReady);
         halGpioEnableRfAt(false);
         delayMs(20);

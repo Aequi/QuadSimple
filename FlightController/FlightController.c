@@ -5,17 +5,17 @@
 
 #define CIRCLE_DEGREES  360.0f
 
-#define PID_PITCH_KP    6.5f
-#define PID_PITCH_KI    15.2f
-#define PID_PITCH_KD    2.0f
+#define PID_PITCH_KP    3.0f
+#define PID_PITCH_KI    0.8f
+#define PID_PITCH_KD    1.2f
 
 #define PID_PITCH_POSITIVE_INTEGRAL_SATURATION_VALUE    20.0f
 #define PID_PITCH_NEGATIVE_INTEGRAL_SATURATION_VALUE    -20.0f
 
 
-#define PID_ROLL_KP     6.5f
-#define PID_ROLL_KI     15.2f
-#define PID_ROLL_KD     2.0f
+#define PID_ROLL_KP     3.0f
+#define PID_ROLL_KI     0.8f
+#define PID_ROLL_KD     1.2f
 
 #define PID_ROLL_POSITIVE_INTEGRAL_SATURATION_VALUE     20.0f
 #define PID_ROLL_NEGATIVE_INTEGRAL_SATURATION_VALUE    -20.0f
@@ -23,7 +23,7 @@
 
 #define PID_YAW_KP      4.0f
 #define PID_YAW_KI      1.0f
-#define PID_YAW_KD      0.5f
+#define PID_YAW_KD      0.7f
 
 #define PID_YAW_POSITIVE_INTEGRAL_SATURATION_VALUE      36.0f
 #define PID_YAW_NEGATIVE_INTEGRAL_SATURATION_VALUE     -36.0f

@@ -6,10 +6,10 @@
 #define JOY_VALUE_MASK          0x0FFF
 #define MAX_THROTTLE            maxOutputValueStatic
 #define CLAMP_JOY(x)            (((x) < -MAX_JOY_VALUE) ? -MAX_JOY_VALUE : (((x) > MAX_JOY_VALUE) ? MAX_JOY_VALUE : (x)))
-#define MAX_QUAD_ANGLE          20.0f
+#define MAX_QUAD_ANGLE          10.0f
 #define MAX_QUAD_RATE           1.0f
 #define MAX_QUAD_POWER_RATE     1.0f
-#define JOY_EPS                 0.001f
+#define JOY_EPS                 0.1f
 #define MAX_YAW_ERROR           5.0f
 #define J1_CAL                  1972
 #define J2_CAL                  2098
@@ -62,6 +62,8 @@ void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystick
 
     if (fabsf(yaw - flightControllerOrientatonEstimate->currentYaw) < MAX_YAW_ERROR) {
         yaw += yawIncrement;
+    } else {
+        yaw = flightControllerOrientatonEstimate->currentYaw;
     }
 
     if (yaw > DEG180) {
@@ -74,12 +76,12 @@ void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystick
 
     float throttleIncrement = (float) CLAMP_JOY(j1y) * MAX_QUAD_POWER_RATE / (float) MAX_JOY_VALUE;
 
-    if (throttleIncrement < JOY_EPS && throttleIncrement > -JOY_EPS) {
-        throttleIncrement = 0;
+    if (throttleIncrement < 0) {
+        throttleIncrement *= 4.0;
     }
 
-    if (throttleIncrement < 0) {
-        throttleIncrement *= 2.0;
+    if (throttleIncrement < JOY_EPS && throttleIncrement > -JOY_EPS) {
+        throttleIncrement = 0;
     }
 
     throttle += throttleIncrement;

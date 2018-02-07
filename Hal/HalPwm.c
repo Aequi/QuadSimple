@@ -90,7 +90,6 @@ void halPwmEnable(PwmChannel pwmChannel, bool isEnabled)
 
 void halPwmSetChannelValue(PwmChannel pwmChannel, uint32_t value)
 {
-    value = value * 2 / 3;
     switch (pwmChannel) {
     case PWM_CHANNEL_0 :
         TIM3->CCR2 = value;
