@@ -237,7 +237,7 @@ void halI2cReadWithDma(uint8_t chipAddress, uint8_t startRegisterAddress, uint32
 
 uint8_t *halI2cGetReadBuffer(uint32_t *bufferSize)
 {
-    if (bufferSize == NULL) {
+    if (bufferSize != NULL) {
         *bufferSize = bytesToRead;
     }
 

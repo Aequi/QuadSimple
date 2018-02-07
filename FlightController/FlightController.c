@@ -59,14 +59,13 @@ void flightControllerUpdate(FlightControllerSetPoint *setPoint,
                             FlightControllerOrientationEstimate *orientationEstimate,
                             FlightControllerMotorOutput *motorOutput)
 {
-    float pitchPidOut, rollPidOut, yawPidOut;
-
     if (setPoint->throttle <= 1.0f) {
         motorOutput->motorFrontLeft = 0.0f;
         motorOutput->motorBackLeft = 0.0f;
         motorOutput->motorBackRight = 0.0f;
         motorOutput->motorFrontRight = 0.0f;
     } else {
+		float pitchPidOut, rollPidOut, yawPidOut;
         pitchPidOut = pidControllerUpdateF(&pidControllerPitch, orientationEstimate->currentPitch - setPoint->pitch);
         rollPidOut = pidControllerUpdateF(&pidControllerRoll, orientationEstimate->currentRoll - setPoint->roll);
 
