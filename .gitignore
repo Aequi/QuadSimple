@@ -4,3 +4,4 @@ bin
 *.depend
 *.out
 *.cscope_file_list
+*.elay.ebTemp
