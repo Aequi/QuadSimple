@@ -42,12 +42,23 @@ void rcProcessorInit(FlightControllerOrientationEstimate *flightControllerOrient
     yaw = flightControllerOrientatonEstimate->currentYaw;
 }
 
+    static int32_t j1x;
+    static int32_t j1y;
+    static int32_t j2x;
+    static int32_t j2y;
+
 void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystickPacket *joystickPacket, FlightControllerOrientationEstimate *flightControllerOrientatonEstimate)
 {
-    int32_t j1x = (joystickPacket->leftX & JOY_VALUE_MASK) - J1_CAL;
-    int32_t j1y = (joystickPacket->leftY & JOY_VALUE_MASK) - J2_CAL;
-    int32_t j2x = (joystickPacket->rightX & JOY_VALUE_MASK) - J3_CAL;
-    int32_t j2y = (joystickPacket->rightY & JOY_VALUE_MASK) - J4_CAL;
+    #define PRE_SHIFT_BIT_COUNT   8
+    #define LOW_PASS_FILTER_KOEF  10
+    #define LOW_PASS_FILTER_KOEF_MAX (1 << PRE_SHIFT_BIT_COUNT)
+
+
+
+    j1x = ((j1x * (LOW_PASS_FILTER_KOEF_MAX - LOW_PASS_FILTER_KOEF)) + ((joystickPacket->leftX & JOY_VALUE_MASK) - J1_CAL) * LOW_PASS_FILTER_KOEF) >> PRE_SHIFT_BIT_COUNT;
+    j1y = ((j1y * (LOW_PASS_FILTER_KOEF_MAX - LOW_PASS_FILTER_KOEF)) + ((joystickPacket->leftY & JOY_VALUE_MASK) - J2_CAL) * LOW_PASS_FILTER_KOEF) >> PRE_SHIFT_BIT_COUNT;
+    j2x = ((j2x * (LOW_PASS_FILTER_KOEF_MAX - LOW_PASS_FILTER_KOEF)) + ((joystickPacket->rightX & JOY_VALUE_MASK) - J3_CAL) * LOW_PASS_FILTER_KOEF) >> PRE_SHIFT_BIT_COUNT;
+    j2y = ((j2y * (LOW_PASS_FILTER_KOEF_MAX - LOW_PASS_FILTER_KOEF)) + ((joystickPacket->rightY & JOY_VALUE_MASK) - J4_CAL) * LOW_PASS_FILTER_KOEF) >> PRE_SHIFT_BIT_COUNT;
 
     roll = -(float) CLAMP_JOY(j2x) * MAX_QUAD_ANGLE / (float) MAX_JOY_VALUE;
     pitch = - (float) CLAMP_JOY(j2y) * MAX_QUAD_ANGLE / (float) MAX_JOY_VALUE;

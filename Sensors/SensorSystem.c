@@ -89,7 +89,7 @@ const enum ImuDlpf {
     IMU_DLPF_21_20_HZ,
     IMU_DLPF_10_10_HZ,
     IMU_DLPF_5_5_HZ,
-} imuDlpf = IMU_DLPF_94_98_HZ;
+} imuDlpf = IMU_DLPF_44_42_HZ;
 
 static SensorSystemUpdateCallback sensorSystemUpdateCallback;
 static OrientationFilterCtx orientationFilterCtx;
@@ -177,10 +177,10 @@ static void onIntEvent(void)
 {
     halI2cReadWithDma(I2C_PERIPH_IMU_ADDRESS, REG_ADDR_ACCEL_XOUT_H, 14);
 }
-
+    static OfVector3 accMeasurements, gyroMeasurements;
 static void onI2cDmaReadyEvent(void)
 {
-    static OfVector3 accMeasurements, gyroMeasurements;
+
     static int16_t imuData[6];
     uint32_t imuDatalength;
 
@@ -353,10 +353,10 @@ void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb, uint32_t 
     halI2cInit(onI2cDmaReadyEvent, onIntEvent);
     setupImu(IMU_SAMPLING_FREQUENCY_MAX / SENSOR_SYSTEM_UPDATE_RATE - 1, imuDlpf, imuGyroRange, imuAccRange);
 
-    #define OF_FILTER_COEF_ALPHA  0.0002f
-    #define OF_FILTER_COEF_BETA   0.0002f
-    #define OF_FILTER_COEF_GAMMA  0.00000002f
-    #define OF_FILTER_COEF_THETA  0.0002f
+    #define OF_FILTER_COEF_ALPHA  0.0001f
+    #define OF_FILTER_COEF_BETA   0.0001f
+    #define OF_FILTER_COEF_GAMMA  0.00000001f
+    #define OF_FILTER_COEF_THETA  0.0001f
 
     orientationFilterInitialize(&orientationFilterCtx, 1.0f / (float) updateRate, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_GAMMA, OF_FILTER_COEF_THETA);
 

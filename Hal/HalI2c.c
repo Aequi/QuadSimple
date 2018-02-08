@@ -43,6 +43,8 @@ static enum {
     I2C_STATE_RX,
 } i2cState = I2C_STATE_STOP;
 
+volatile static int16_t xAcc = 0;
+volatile static int16_t yAcc = 0;
 
 void I2C1_IRQHandler(void)
 {
@@ -91,6 +93,8 @@ void I2C1_IRQHandler(void)
         DMA_ITConfig(DMA1_Channel3, DMA_IT_TC, DISABLE);
         DMA_Cmd(DMA1_Channel3, DISABLE);
         i2cState = I2C_STATE_STOP;
+        xAcc = (int16_t) (((uint16_t) halI2cReadBuffer[0] << 8) | ((uint16_t) halI2cReadBuffer[1] << 0));
+        yAcc = (int16_t) (((uint16_t) halI2cReadBuffer[2] << 8) | ((uint16_t) halI2cReadBuffer[3] << 0));
         break;
 
     default :
@@ -143,10 +147,13 @@ static void i2cInit(void)
     I2C_InitTypeDef i2cInitStructure;
     I2C_StructInit(&i2cInitStructure);
     i2cInitStructure.I2C_Mode = I2C_Mode_I2C;
-    i2cInitStructure.I2C_Timing = 0x00000102;
+    i2cInitStructure.I2C_Timing = 0x00000808;
     i2cInitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
     i2cInitStructure.I2C_OwnAddress1 = I2C_PERIPH_OWN_ADDRESS;
     i2cInitStructure.I2C_Ack = I2C_Ack_Enable;
+    i2cInitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
+    i2cInitStructure.I2C_DigitalFilter = 0x0F;
+
     I2C_Init(I2C_PERIPH_HWUNIT, &i2cInitStructure);
     I2C_AcknowledgeConfig(I2C_PERIPH_HWUNIT, ENABLE);
     I2C_StretchClockCmd(I2C_PERIPH_HWUNIT, ENABLE);
