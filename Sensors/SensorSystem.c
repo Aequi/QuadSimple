@@ -188,9 +188,9 @@ static void onI2cDmaReadyEvent(void)
 
     unpackImuFrame(data, (uint16_t *) imuData);
 
-    accMeasurements.x = (float) imuData[0] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE;
-    accMeasurements.y = (float) imuData[1] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE;
-    accMeasurements.z = (float) imuData[2] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE;
+    accMeasurements.x = ((float) imuData[0] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE) * 0.1 + accMeasurements.x * 0.9;
+    accMeasurements.y = ((float) imuData[1] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE) * 0.1 + accMeasurements.y * 0.9;
+    accMeasurements.z = ((float) imuData[2] * imuAccRangeValues[imuAccRange] / IMU_MAX_OUTPUT_VALUE)  * 0.1 + accMeasurements.z * 0.9;
     gyroMeasurements.x = (float) imuData[3] * imuGyroRangeValues[imuGyroRange] * M_PI_F / IMU_MAX_OUTPUT_VALUE / DEG_180;
     gyroMeasurements.y = (float) imuData[4] * imuGyroRangeValues[imuGyroRange] * M_PI_F / IMU_MAX_OUTPUT_VALUE / DEG_180;
     gyroMeasurements.z = (float) imuData[5] * imuGyroRangeValues[imuGyroRange] * M_PI_F / IMU_MAX_OUTPUT_VALUE / DEG_180;
@@ -353,10 +353,10 @@ void sensorSystemInit(SensorSystemUpdateCallback sensorSystemUpdateCb, uint32_t 
     halI2cInit(onI2cDmaReadyEvent, onIntEvent);
     setupImu(IMU_SAMPLING_FREQUENCY_MAX / SENSOR_SYSTEM_UPDATE_RATE - 1, imuDlpf, imuGyroRange, imuAccRange);
 
-    #define OF_FILTER_COEF_ALPHA  0.0001f
-    #define OF_FILTER_COEF_BETA   0.0001f
+    #define OF_FILTER_COEF_ALPHA  0.00001f
+    #define OF_FILTER_COEF_BETA   0.00001f
     #define OF_FILTER_COEF_GAMMA  0.00000001f
-    #define OF_FILTER_COEF_THETA  0.0001f
+    #define OF_FILTER_COEF_THETA  0.00001f
 
     orientationFilterInitialize(&orientationFilterCtx, 1.0f / (float) updateRate, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_ALPHA, OF_FILTER_COEF_GAMMA, OF_FILTER_COEF_THETA);
 

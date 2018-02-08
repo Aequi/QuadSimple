@@ -6,7 +6,7 @@
 #define JOY_VALUE_MASK          0x0FFF
 #define MAX_THROTTLE            maxOutputValueStatic
 #define CLAMP_JOY(x)            (((x) < -MAX_JOY_VALUE) ? -MAX_JOY_VALUE : (((x) > MAX_JOY_VALUE) ? MAX_JOY_VALUE : (x)))
-#define MAX_QUAD_ANGLE          10.0f
+#define MAX_QUAD_ANGLE          20.0f
 #define MAX_QUAD_RATE           1.0f
 #define MAX_QUAD_POWER_RATE     1.0f
 #define JOY_EPS                 0.1f
