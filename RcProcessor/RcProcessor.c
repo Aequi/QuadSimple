@@ -10,7 +10,7 @@
 #define MAX_QUAD_RATE           1.0f
 #define MAX_QUAD_POWER_RATE     1.0f
 #define JOY_EPS                 0.1f
-#define MAX_YAW_ERROR           5.0f
+#define MAX_YAW_ERROR           180.0f
 #define J1_CAL                  1972
 #define J2_CAL                  2098
 #define J3_CAL                  2028
@@ -50,10 +50,8 @@ void rcProcessorInit(FlightControllerOrientationEstimate *flightControllerOrient
 void rcProcessorGetSetPoint(FlightControllerSetPoint *setPoint, ProtocolJoystickPacket *joystickPacket, FlightControllerOrientationEstimate *flightControllerOrientatonEstimate)
 {
     #define PRE_SHIFT_BIT_COUNT   8
-    #define LOW_PASS_FILTER_KOEF  10
+    #define LOW_PASS_FILTER_KOEF  6
     #define LOW_PASS_FILTER_KOEF_MAX (1 << PRE_SHIFT_BIT_COUNT)
-
-
 
     j1x = ((j1x * (LOW_PASS_FILTER_KOEF_MAX - LOW_PASS_FILTER_KOEF)) + ((joystickPacket->leftX & JOY_VALUE_MASK) - J1_CAL) * LOW_PASS_FILTER_KOEF) >> PRE_SHIFT_BIT_COUNT;
     j1y = ((j1y * (LOW_PASS_FILTER_KOEF_MAX - LOW_PASS_FILTER_KOEF)) + ((joystickPacket->leftY & JOY_VALUE_MASK) - J2_CAL) * LOW_PASS_FILTER_KOEF) >> PRE_SHIFT_BIT_COUNT;

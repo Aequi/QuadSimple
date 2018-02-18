@@ -21,12 +21,12 @@
 #define PID_ROLL_NEGATIVE_INTEGRAL_SATURATION_VALUE     -10.0f
 
 
-#define PID_YAW_KP      3.0f
+#define PID_YAW_KP      4.0f
 #define PID_YAW_KI      0.7f
-#define PID_YAW_KD      0.7f
+#define PID_YAW_KD      1.0f
 
-#define PID_YAW_POSITIVE_INTEGRAL_SATURATION_VALUE      18.0f
-#define PID_YAW_NEGATIVE_INTEGRAL_SATURATION_VALUE      -18.0f
+#define PID_YAW_POSITIVE_INTEGRAL_SATURATION_VALUE      180.0f
+#define PID_YAW_NEGATIVE_INTEGRAL_SATURATION_VALUE      -180.0f
 
 
 static PidControllerF pidControllerPitch, pidControllerRoll, pidControllerYaw;
